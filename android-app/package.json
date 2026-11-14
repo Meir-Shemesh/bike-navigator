@@ -1,0 +1,24 @@
+{
+  "name": "bike-navigator-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Capacitor wrapper that packages ../bike-navigator.html as an Android app",
+  "scripts": {
+    "prep": "node prep.js",
+    "android:create": "npx cap add android && node patch-android.js",
+    "android:sync": "npx cap sync android",
+    "build:all": "npm run prep && npm run android:create && npm run android:sync"
+  },
+  "dependencies": {
+    "@capacitor-community/keep-awake": "^8.0.1",
+    "@capacitor-community/text-to-speech": "^8.0.2",
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3",
+    "leaflet": "1.9.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2"
+  }
+}

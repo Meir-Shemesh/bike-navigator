@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bike Navigator">
+<meta name="theme-color" content="#0b7a53">
+<title>ניווט אופניים</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#f4f6f5; --surface:#ffffff; --surface2:#eef2f0; --text:#17211c; --muted:#5d6b64; --border:#d5ddd8;
+  --accent:#0b7a53; --accent-text:#ffffff; --danger:#c0392b; --warn-bg:#fff4d6; --warn-text:#6b4e00;
+  --shadow:0 4px 18px rgba(0,0,0,.18); --casing:#ffffff; --me:#1a73e8;
+  --c-bike:#0a9d58; --c-lane:#12a5a5; --c-quiet:#2f7fe0; --c-medium:#e0a100; --c-busy:#d9362b;
+  --c-trail:#8a5a2b; --c-foot:#8e5bd0; --c-other:#7a8580; --c-alt:#7d8890;
+  --sf-paved:#5b6b7a; --sf-gravel:#c79a4b; --sf-dirt:#8a5a2b; --sf-unk:#b8c0bc;
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101513; --surface:#1a211e; --surface2:#242d29; --text:#e8efeb; --muted:#9fb0a7; --border:#34403a;
+    --accent:#35c08a; --accent-text:#06231a; --danger:#ff7b6b; --warn-bg:#3d3312; --warn-text:#ffe08a;
+    --shadow:0 4px 18px rgba(0,0,0,.55); --casing:#0e1311; --me:#6aa9ff;
+    --c-bike:#2fd07f; --c-lane:#35cfcf; --c-quiet:#6aa9ff; --c-medium:#ffc233; --c-busy:#ff6257;
+    --c-trail:#c48a52; --c-foot:#b68cf0; --c-other:#9aa5a0; --c-alt:#8b969d;
+    --sf-paved:#8fa1b3; --sf-gravel:#dab36a; --sf-dirt:#b07a45; --sf-unk:#55615b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101513; --surface:#1a211e; --surface2:#242d29; --text:#e8efeb; --muted:#9fb0a7; --border:#34403a;
+  --accent:#35c08a; --accent-text:#06231a; --danger:#ff7b6b; --warn-bg:#3d3312; --warn-text:#ffe08a;
+  --shadow:0 4px 18px rgba(0,0,0,.55); --casing:#0e1311; --me:#6aa9ff;
+  --c-bike:#2fd07f; --c-lane:#35cfcf; --c-quiet:#6aa9ff; --c-medium:#ffc233; --c-busy:#ff6257;
+  --c-trail:#c48a52; --c-foot:#b68cf0; --c-other:#9aa5a0; --c-alt:#8b969d;
+  --sf-paved:#8fa1b3; --sf-gravel:#dab36a; --sf-dirt:#b07a45; --sf-unk:#55615b;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:system-ui,"Segoe UI","Noto Sans Hebrew",Arial,sans-serif;font-size:15px;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+#map{position:fixed;inset:0;direction:ltr;background:var(--surface2);z-index:0}
+.leaflet-container{font:inherit}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--text)}
+.leaflet-popup-content{margin:10px 12px}
+:root[dir="rtl"] .leaflet-popup-content{direction:rtl}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 80%,transparent)!important;color:var(--muted)!important;font-size:10px}
+.leaflet-control-attribution a{color:var(--muted)!important}
+
+.panel{position:fixed;z-index:500;inset-inline-start:10px;width:min(430px,calc(100vw - 20px))}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+#search{top:calc(10px + env(safe-area-inset-top));padding:8px}
+.row{display:flex;align-items:center;gap:6px}
+.field{position:relative;flex:1;display:flex;align-items:center;background:var(--surface2);border-radius:10px;padding-inline:8px}
+.field .dot{width:10px;height:10px;border-radius:50%;flex:none;margin-inline-end:6px}
+.dot.a{background:var(--accent)} .dot.b{background:var(--danger)}
+.field input{flex:1;min-width:0;border:0;background:transparent;padding:9px 2px;outline:none}
+.field .x{border:0;background:transparent;color:var(--muted);padding:4px 6px;font-size:16px}
+.iconbtn{border:1px solid var(--border);background:var(--surface);border-radius:10px;width:38px;height:38px;display:grid;place-items:center;flex:none;font-size:17px}
+#sugg{margin-top:6px;max-height:42vh;overflow:auto;border-top:1px solid var(--border)}
+#sugg button{display:block;width:100%;text-align:start;border:0;background:transparent;padding:9px 8px;border-bottom:1px solid var(--border)}
+#sugg button small{display:block;color:var(--muted)}
+#sugg button:hover{background:var(--surface2)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-top:8px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;white-space:nowrap}
+.chip.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+
+#fabs{position:fixed;z-index:480;inset-inline-end:10px;top:calc(10px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:8px}
+@media (max-width:900px){#fabs{top:calc(150px + env(safe-area-inset-top))}}
+.fab{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);display:grid;place-items:center}
+.fab svg{width:22px;height:22px;fill:none;stroke:var(--text);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pop{position:fixed;z-index:600;inset-inline-end:62px;top:calc(60px + env(safe-area-inset-top));width:260px;padding:10px;display:none}
+@media (max-width:900px){.pop{top:calc(150px + env(safe-area-inset-top))}}
+.pop.open{display:block}
+.pop h4{margin:4px 0 6px;font-size:13px;color:var(--muted);font-weight:600}
+.pop label{display:flex;align-items:center;gap:8px;padding:6px 2px}
+.pop .item{display:block;width:100%;text-align:start;border:0;background:transparent;padding:9px 6px;border-radius:8px}
+.pop .item:hover{background:var(--surface2)}
+
+#sheet{bottom:0;border-end-start-radius:0;border-end-end-radius:0;max-height:52vh;display:none;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)}
+#sheet.open{display:flex}
+#sheet.collapsed #sheetBody{display:none}
+#sheetHead{display:flex;align-items:center;gap:8px;padding:8px 12px;border:0;background:transparent;width:100%;text-align:start}
+#sheetHead::before{content:"";position:absolute;top:5px;left:50%;transform:translateX(-50%);width:38px;height:4px;border-radius:2px;background:var(--border)}
+#sheetTitle{flex:1;font-weight:700;padding-top:6px}
+#sheetBody{overflow:auto;padding:0 12px 12px}
+.alt{display:block;width:100%;text-align:start;border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:9px 11px;margin-bottom:7px}
+.alt.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.alt b{font-size:17px}
+.alt .sub{color:var(--muted);font-size:13px;margin-top:2px}
+.tag{display:inline-block;border-radius:999px;padding:1px 8px;font-size:12px;background:var(--surface2);color:var(--muted);margin-inline-end:4px}
+.tag.good{background:color-mix(in srgb,var(--c-bike) 18%,transparent);color:var(--text)}
+.tag.bad{background:color-mix(in srgb,var(--c-busy) 18%,transparent);color:var(--text)}
+.btn{border:0;border-radius:10px;padding:10px 14px;background:var(--accent);color:var(--accent-text);font-weight:700}
+.btn.sec{background:var(--surface2);color:var(--text);font-weight:600}
+.btn.danger{background:var(--danger);color:#fff}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.btns .btn{flex:1;white-space:nowrap}
+h3.sec{font-size:13px;color:var(--muted);margin:12px 0 5px;font-weight:600}
+.bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--surface2)}
+.bar i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:3px 12px;margin-top:6px;font-size:12.5px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--k);margin-inline-end:5px}
+.elev{width:100%;height:74px;display:block;background:var(--surface2);border-radius:8px}
+.elev path.area{fill:color-mix(in srgb,var(--accent) 28%,transparent);stroke:var(--accent);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13.5px}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+.note{background:var(--warn-bg);color:var(--warn-text);border-radius:10px;padding:8px 10px;font-size:13px;margin:8px 0}
+.muted{color:var(--muted)} .small{font-size:13px}
+details.steps summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
+.step{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px}
+.step .ar{font-size:20px;width:26px;text-align:center;direction:ltr}
+.trail{display:block;width:100%;text-align:start;border:0;border-bottom:1px solid var(--border);background:transparent;padding:10px 2px}
+.trail:hover{background:var(--surface2)}
+a{color:var(--accent)}
+
+/* route segments on the map */
+path.casing{stroke:var(--casing)}
+path.seg-bike{stroke:var(--c-bike)} path.seg-lane{stroke:var(--c-lane)} path.seg-quiet{stroke:var(--c-quiet)}
+path.seg-medium{stroke:var(--c-medium)} path.seg-busy{stroke:var(--c-busy)} path.seg-trail{stroke:var(--c-trail)}
+path.seg-foot{stroke:var(--c-foot)} path.seg-other{stroke:var(--c-other)} path.seg-alt{stroke:var(--c-alt)}
+path.acc{stroke:var(--me);fill:var(--me)}
+.pin{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:grid;place-items:center;border:2px solid var(--casing);box-shadow:0 2px 6px rgba(0,0,0,.4);color:#fff;font-weight:700;font-size:12px}
+.pin span{transform:rotate(45deg)}
+.pin.a{background:var(--accent);color:var(--accent-text)} .pin.b{background:var(--danger)} .pin.v{background:var(--c-quiet)}
+.me{width:22px;height:22px;border-radius:50%;background:var(--me);border:3px solid var(--casing);box-shadow:0 0 0 2px var(--me),0 2px 8px rgba(0,0,0,.4);position:relative}
+.me::after{content:"";position:absolute;left:50%;top:-11px;margin-left:-6px;border:6px solid transparent;border-bottom:10px solid var(--me);transform-origin:6px 22px;transform:rotate(var(--hd,0deg));display:var(--hdshow,none)}
+
+/* navigation mode */
+#navTop{top:calc(10px + env(safe-area-inset-top));display:none;padding:12px 14px;background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+#navTop.warn{background:var(--danger);border-color:var(--danger);color:#fff}
+#navTop .big{display:flex;align-items:center;gap:12px}
+#navArrow{font-size:44px;line-height:1;direction:ltr;width:52px;text-align:center}
+#navDist{font-size:26px;font-weight:800}
+#navText{font-size:16px}
+#navBottom{bottom:0;display:none;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-end-start-radius:0;border-end-end-radius:0}
+#navBottom .stats{display:flex;justify-content:space-between;text-align:center;margin-bottom:8px}
+#navBottom .stats b{display:block;font-size:20px}
+#navBottom .stats span{font-size:12px;color:var(--muted)}
+body.nav #search,body.nav #sheet,body.nav #fabs .hide-nav{display:none!important}
+body.nav #navTop,body.nav #navBottom{display:block}
+body.nav #fabs{top:calc(120px + env(safe-area-inset-top))}
+#toast{position:fixed;z-index:900;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));background:var(--text);color:var(--bg);padding:9px 14px;border-radius:10px;max-width:86vw;text-align:center;opacity:0;pointer-events:none;transition:opacity .25s}
+#toast.show{opacity:.95}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-inline-end:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<!-- search + riding style -->
+<div id="search" class="panel card">
+  <div class="row">
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+      <div class="field"><i class="dot a"></i><input id="inFrom" data-i18n-ph="phFrom" autocomplete="off" enterkeyhint="search"><button class="x" data-clear="from" data-i18n-title="clear">×</button></div>
+      <div class="field"><i class="dot b"></i><input id="inTo" data-i18n-ph="phTo" autocomplete="off" enterkeyhint="search"><button class="x" data-clear="to" data-i18n-title="clear">×</button></div>
+    </div>
+    <button class="iconbtn" id="btnSwap" data-i18n-title="swap">⇅</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div id="sugg" hidden></div>
+</div>
+
+<!-- floating buttons -->
+<div id="fabs">
+  <button class="fab" id="fabLocate" data-i18n-title="myLoc"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
+  <button class="fab hide-nav" id="fabTrails" data-i18n-title="trailsBtn"><svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="3.5"/><circle cx="18" cy="17" r="3.5"/><path d="M6 17l4-8h5l3 8M10 9l3 8M9 6h3"/></svg></button>
+  <button class="fab" id="fabLayers" data-i18n-title="layers"><svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5"/></svg></button>
+  <button class="fab hide-nav" id="fabMenu" data-i18n-title="menu"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</div>
+<div class="pop card" id="popLayers">
+  <h4 data-i18n="baseH"></h4><div id="baseList"></div>
+  <h4 data-i18n="overH"></h4><div id="overList"></div>
+</div>
+<div class="pop card" id="popMenu">
+  <button class="item" data-menu="lang"><span data-i18n="mLang"></span> <b id="langState"></b></button>
+  <button class="item" data-menu="gpxin" data-i18n="mGpxIn"></button>
+  <button class="item" data-menu="gpxout" data-i18n="mGpxOut"></button>
+  <button class="item" data-menu="sim" data-i18n="mSim"></button>
+  <button class="item" data-menu="voice"><span data-i18n="mVoice"></span> <b id="voiceState"></b></button>
+  <button class="item" data-menu="theme"><span data-i18n="mTheme"></span> <b id="themeState"></b></button>
+  <button class="item" data-menu="about" data-i18n="mAbout"></button>
+</div>
+<input type="file" id="gpxFile" accept=".gpx,application/gpx+xml,text/xml,application/xml,application/octet-stream" hidden>
+
+<!-- bottom sheet: results -->
+<section id="sheet" class="panel card">
+  <button id="sheetHead"><span id="sheetTitle"></span><span class="muted" id="sheetToggle">▾</span></button>
+  <div id="sheetBody"></div>
+</section>
+
+<!-- navigation mode -->
+<div id="navTop" class="panel card">
+  <div class="big"><div id="navArrow">↑</div><div><div id="navDist"></div><div id="navText"></div></div></div>
+</div>
+<div id="navBottom" class="panel card">
+  <div class="stats">
+    <div><b id="nvRem">–</b><span data-i18n="nvRem"></span></div>
+    <div><b id="nvEta">–</b><span data-i18n="nvEta"></span></div>
+    <div><b id="nvSpd">–</b><span data-i18n="nvKmh"></span></div>
+  </div>
+  <div class="row">
+    <button class="btn danger" id="btnStop" style="flex:1" data-i18n="nvStop"></button>
+    <button class="btn sec" id="btnCenter" data-i18n="nvCenter"></button>
+    <button class="btn sec" id="btnMute">🔊</button>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+'use strict';
+/* ===================== I18N: כל הטקסט הגלוי, בעברית ובאנגלית ===================== */
+const I18N={
+he:{
+  appTitle:'ניווט אופניים',
+  'cat.bike':'שביל אופניים','cat.lane':'נתיב אופניים בכביש','cat.quiet':'רחוב שקט','cat.medium':'רחוב מאסף','cat.busy':'כביש סואן','cat.trail':'שביל שטח','cat.foot':'מדרכה / הולכי רגל','cat.other':'אחר',
+  'sf.paved':'סלול','sf.gravel':'כורכר / חצץ מהודק','sf.dirt':'עפר / לא סלול','sf.unk':'לא מתויג',
+  'p.trekking':'מאוזן (מומלץ)','p.safety':'הכי בטוח','p.fastbike':'מהיר – כביש','p.gravel':'דרכי עפר (גראבל)','p.mtb':'שטח (MTB)','p.shortest':'הקצר ביותר',
+  'h.straight':'המשיכו ישר','h.left':'פנו שמאלה','h.slightLeft':'פנו קלות שמאלה','h.sharpLeft':'פנו חדות שמאלה','h.right':'פנו ימינה','h.slightRight':'פנו קלות ימינה','h.sharpRight':'פנו חדות ימינה',
+  'h.keepLeft':'היצמדו לשמאל','h.keepRight':'היצמדו לימין','h.uturn':'בצעו פניית פרסה','h.roundabout':'בכיכר, צאו ביציאה {0}',
+  ord:['','הראשונה','השנייה','השלישית','הרביעית','החמישית','השישית','השביעית'],
+  'u.m':'מ׳','u.km':'ק״מ','u.min':'דק׳','u.h':'שע׳',
+  phFrom:'מוצא (ברירת מחדל: המיקום שלי)',phTo:'לאן רוכבים?',clear:'ניקוי',swap:'החלפת מוצא ויעד',myLoc:'המיקום שלי',mapPoint:'נקודה במפה',
+  trailsBtn:'מסלולי אופניים באזור',layers:'שכבות מפה',menu:'תפריט',baseH:'מפת בסיס',overH:'שכבות מסלולים מסומנים',
+  'b.cyclosm':'מפת אופניים (CyclOSM)','b.osm':'מפה רגילה (OSM)','b.topo':'טופוגרפית (OpenTopoMap)','o.cycling':'מסלולי אופניים מסומנים','o.mtb':'מסלולי שטח (MTB) מסומנים',
+  mLang:'שפה:',langName:'עברית',mGpxIn:'ייבוא מסלול מקובץ GPX',mGpxOut:'ייצוא המסלול הנוכחי ל-GPX',mSim:'סימולציית רכיבה (לבדיקה)',mVoice:'הנחיות קוליות:',on:'פעילות',off:'כבויות',
+  mTheme:'ערכת צבעים:','th.auto':'אוטומטי','th.light':'בהיר','th.dark':'כהה',mAbout:'מקורות המידע',
+  nvRem:'נותרו',nvEta:'שעת הגעה',nvKmh:'קמ״ש',nvStop:'סיום ניווט',nvCenter:'מרכוז',
+  geoDenied:'אין הרשאת מיקום. יש לאשר לאפליקציה גישה למיקום.',geoFail:'לא ניתן לקבל מיקום. ודאו שה-GPS פעיל.',
+  noResults:'לא נמצאו תוצאות',place:'מקום',coords:'קואורדינטות',noDest:'אין יעד להחלפה',
+  navHere:'ניווט לכאן',fromHere:'יציאה מכאן',addVia:'הוספת נקודת ביניים',viaRemoved:'נקודת הביניים הוסרה',
+  needFrom:'בחרו נקודת מוצא (או אשרו גישה למיקום)',calcT:'מחשב מסלול…',calcB:'מחפש את המסלול המתאים ביותר לאופניים…',
+  noRouteT:'לא נמצא מסלול',errFar:'אחת הנקודות רחוקה מדי מדרך המתאימה לרכיבה. נסו להזיז אותה.',errNet:'לא ניתן היה לחשב מסלול כעת. בדקו את החיבור לרשת ונסו שוב.',retry:'ניסיון חוזר',
+  fbNote:'המסלול חושב בשרת הגיבוי – ללא פירוט סוגי דרך ומשטח.',busyNote:'שימו לב: {0} מהמסלול עוברים בכביש סואן (מסומן באדום). נסו את הסגנון ״הכי בטוח״ או בחרו חלופה.',
+  wayType:'סוג הדרך',surface:'משטח',elevH:'פרופיל גובה',climb:'טיפוס מצטבר {0}',steps:'הנחיות הדרך ({0})',after:'לאחר {0}',
+  rec:'מומלץ',fastest:'המהיר ביותר',altN:'חלופה {0}',bikePct:'שבילי/נתיבי אופניים {0}%',busyPct:'כביש סואן {0}%',
+  start:'התחלת ניווט',gpxExp:'ייצוא GPX',tip:'טיפ: לחיצה על המפה מוסיפה נקודת ביניים; גרירת הסיכות משנה את המסלול.',routeTitle:'מסלול ליעד · {0}',
+  estTime:'(זמן משוער)',gapsNote:'המסלול אינו רציף לחלוטין בנתוני OSM ({0} קטיעות). ייתכנו קפיצות בקו ובהנחיות.',
+  rideAlong:'רכיבה לאורך המסלול',toStart:'ניווט לנקודת ההתחלה',back:'חזרה לרשימה',route:'מסלול',startOf:'תחילת {0}',
+  trailPh:'חיפוש מסלול לפי שם',search:'חיפוש',noName:'מסלול ללא שם',tMtb:'שטח (MTB)',tBike:'אופניים','g.INT':'בינלאומי','g.NAT':'ארצי','g.REG':'אזורי','g.LOC':'מקומי',
+  noTrails:'לא נמצאו מסלולים מסומנים באזור המוצג. נסו להרחיק את המפה או לחפש לפי שם.',
+  trailSrc:'המקור: מסלולים שמיפו ותייגו מתנדבי OpenStreetMap (דרך Waymarked Trails). מסלולים מ-Komoot / Strava / Wikiloc ניתן לייבא כקובץ GPX מהתפריט.',
+  trailsLoading:'מחפש מסלולים באזור המוצג…',trailsErr:'לא ניתן לטעון את רשימת המסלולים כעת. בדקו את החיבור לרשת.',searching:'מחפש…',searchErr:'החיפוש נכשל. נסו שוב.',
+  loadingTrail:'טוען את פרטי המסלול…',superNote:'זהו ״מסלול-על״ המורכב מ-{0} תתי-מסלולים, ואין לו קו רציף משלו. בחרו אחד מהמקטעים מהרשימה.',trailErr:'טעינת המסלול נכשלה (ייתכן שהוא גדול מדי או שאין חיבור).',
+  kType:'סוג',vMtb:'מסלול שטח (MTB)',vBike:'מסלול אופניים',kNet:'רשת','net.icn':'רשת בינלאומית','net.ncn':'רשת ארצית','net.rcn':'רשת אזורית','net.lcn':'רשת מקומית',
+  kOffLen:'אורך רשמי',kMapLen:'אורך ממופה',kLoop:'מעגלי',yes:'כן',yesLooks:'כן (נראה מעגלי)',kTech:'קושי טכני',kTechMax:'קושי טכני (מקסימלי במקטעים)',kImba:'דירוג IMBA',kUphill:'קושי עלייה',uphillV:'דרגה {0} מתוך 5',
+  kSmooth:'איכות המשטח (מתויגת)','sm.excellent':'מצוינת','sm.good':'טובה','sm.intermediate':'בינונית','sm.bad':'גרועה','sm.very_bad':'גרועה מאוד','sm.horrible':'קשה מאוד','sm.very_horrible':'כמעט בלתי עבירה','sm.impassable':'בלתי עבירה',
+  kChar:'אופי',chOff:'בעיקר שטח ({0}% לא סלול)',chMix:'מעורב ({0}% לא סלול)',chPaved:'בעיקר סלול',kClimb:'טיפוס',kOper:'מפעיל',kMark:'סימון',kSite:'אתר',moreInfo:'קישור למידע נוסף',
+  mtbS:['S0 – קל מאוד: שביל רחב וחלק','S1 – קל: מכשולים קטנים, שורשים ואבנים','S2 – בינוני: מדרגות וסלעים, נדרשת טכניקה','S3 – קשה: מעברים טכניים רבים','S4 – קשה מאוד: למנוסים בלבד','S5 – קיצוני','S6 – קיצוני'],
+  imba:['קל מאוד (לבן)','קל (ירוק)','בינוני (כחול)','קשה (שחור)','קשה מאוד (שחור כפול)'],
+  noExport:'אין מסלול לייצוא',gpxDefault:'מסלול אופניים',gpxBad:'לא ניתן לקרוא את קובץ ה-GPX',kSrc:'מקור',gpxFile:'קובץ GPX: {0}',kLen:'אורך',gpxName:'מסלול GPX',
+  pickFirst:'בחרו תחילה מסלול',starting:'מתחילים…',sayStart:'מתחילים בניווט',simHint:'סימולציה: הקישו על המפה כדי לדמות סטייה מהמסלול',simDev:'סימולציה: סטייה מהמסלול',navEnded:'הניווט הסתיים',
+  offRoute:'סטיתם מהמסלול',arrived:'הגעתם ליעד',toDest:'המשיכו עד היעד',inMeters:'בעוד {0} מטר, {1}',recalc:'מחשב מסלול מחדש',updated:'המסלול עודכן · {0}',recalcFail:'לא ניתן לחשב מסלול מחדש כעת – מנסה שוב בקרוב',
+  aboutIntro:'האפליקציה נשענת כולה על שירותים חופשיים וקוד פתוח:',aMaps:'מפות',aRouting:'חישוב מסלול',aTrails:'מסלולים מסומנים',aSearch:'חיפוש כתובות',backup:'גיבוי',
+  aboutLegend:'צבעי המסלול: ירוק – שביל אופניים; טורקיז – נתיב אופניים; כחול – רחוב שקט; צהוב – רחוב מאסף; אדום – כביש סואן; חום – שביל שטח. הנתונים מבוססים על מיפוי מתנדבים; רכבו בזהירות והפעילו שיקול דעת.',
+  pinA:'א',pinB:'ב'
+},
+en:{
+  appTitle:'Bike Navigator',
+  'cat.bike':'Bike path','cat.lane':'On-road bike lane','cat.quiet':'Quiet street','cat.medium':'Collector road','cat.busy':'Busy road','cat.trail':'Off-road trail','cat.foot':'Sidewalk / pedestrian','cat.other':'Other',
+  'sf.paved':'Paved','sf.gravel':'Gravel / compacted','sf.dirt':'Dirt / unpaved','sf.unk':'Untagged',
+  'p.trekking':'Balanced (recommended)','p.safety':'Safest','p.fastbike':'Fast – road','p.gravel':'Gravel roads','p.mtb':'Off-road (MTB)','p.shortest':'Shortest',
+  'h.straight':'Continue straight','h.left':'Turn left','h.slightLeft':'Turn slightly left','h.sharpLeft':'Turn sharp left','h.right':'Turn right','h.slightRight':'Turn slightly right','h.sharpRight':'Turn sharp right',
+  'h.keepLeft':'Keep left','h.keepRight':'Keep right','h.uturn':'Make a U-turn','h.roundabout':'At the roundabout, take the {0} exit',
+  ord:['','1st','2nd','3rd','4th','5th','6th','7th'],
+  'u.m':'m','u.km':'km','u.min':'min','u.h':'h',
+  phFrom:'From (default: my location)',phTo:'Where to?',clear:'Clear',swap:'Swap start and destination',myLoc:'My location',mapPoint:'Point on map',
+  trailsBtn:'Bike routes nearby',layers:'Map layers',menu:'Menu',baseH:'Base map',overH:'Marked-route overlays',
+  'b.cyclosm':'Cycling map (CyclOSM)','b.osm':'Standard map (OSM)','b.topo':'Topographic (OpenTopoMap)','o.cycling':'Marked cycling routes','o.mtb':'Marked MTB routes',
+  mLang:'Language:',langName:'English',mGpxIn:'Import route from GPX file',mGpxOut:'Export current route to GPX',mSim:'Ride simulation (for testing)',mVoice:'Voice guidance:',on:'On',off:'Off',
+  mTheme:'Theme:','th.auto':'Auto','th.light':'Light','th.dark':'Dark',mAbout:'Data sources',
+  nvRem:'Remaining',nvEta:'Arrival',nvKmh:'km/h',nvStop:'End navigation',nvCenter:'Re-center',
+  geoDenied:'Location permission denied. Please allow the app to access your location.',geoFail:'Unable to get your location. Make sure GPS is on.',
+  noResults:'No results found',place:'Place',coords:'Coordinates',noDest:'No destination to swap',
+  navHere:'Navigate here',fromHere:'Start from here',addVia:'Add waypoint',viaRemoved:'Waypoint removed',
+  needFrom:'Choose a starting point (or allow location access)',calcT:'Calculating route…',calcB:'Finding the best route for cycling…',
+  noRouteT:'No route found',errFar:'One of the points is too far from a rideable way. Try moving it.',errNet:'Could not calculate a route right now. Check your connection and try again.',retry:'Retry',
+  fbNote:'This route was calculated by the backup server – no way-type or surface breakdown.',busyNote:'Heads up: {0} of this route runs on a busy road (shown in red). Try the "Safest" style or pick an alternative.',
+  wayType:'Way type',surface:'Surface',elevH:'Elevation profile',climb:'total climb {0}',steps:'Turn-by-turn directions ({0})',after:'after {0}',
+  rec:'Recommended',fastest:'Fastest',altN:'Alternative {0}',bikePct:'Bike paths/lanes {0}%',busyPct:'Busy road {0}%',
+  start:'Start navigation',gpxExp:'Export GPX',tip:'Tip: tap the map to add a waypoint; drag the pins to change the route.',routeTitle:'Route · {0}',
+  estTime:'(estimated time)',gapsNote:'This route is not fully continuous in OSM data ({0} gaps). The line and directions may jump.',
+  rideAlong:'Ride along this route',toStart:'Navigate to the start',back:'Back to list',route:'Route',startOf:'Start of {0}',
+  trailPh:'Search routes by name',search:'Search',noName:'Unnamed route',tMtb:'Off-road (MTB)',tBike:'Cycling','g.INT':'International','g.NAT':'National','g.REG':'Regional','g.LOC':'Local',
+  noTrails:'No marked routes found in the visible area. Try zooming out or searching by name.',
+  trailSrc:'Source: routes mapped and tagged by OpenStreetMap volunteers (via Waymarked Trails). Routes from Komoot / Strava / Wikiloc can be imported as GPX files from the menu.',
+  trailsLoading:'Looking for routes in the visible area…',trailsErr:'Could not load the route list right now. Check your connection.',searching:'Searching…',searchErr:'Search failed. Please try again.',
+  loadingTrail:'Loading route details…',superNote:'This is a "super-route" made of {0} sub-routes and has no continuous line of its own. Pick one of the sections from the list.',trailErr:'Failed to load the route (it may be too large, or you are offline).',
+  kType:'Type',vMtb:'Off-road route (MTB)',vBike:'Cycling route',kNet:'Network','net.icn':'International network','net.ncn':'National network','net.rcn':'Regional network','net.lcn':'Local network',
+  kOffLen:'Official length',kMapLen:'Mapped length',kLoop:'Loop',yes:'Yes',yesLooks:'Yes (appears to be a loop)',kTech:'Technical difficulty',kTechMax:'Technical difficulty (max. on sections)',kImba:'IMBA rating',kUphill:'Uphill difficulty',uphillV:'Grade {0} of 5',
+  kSmooth:'Surface quality (tagged)','sm.excellent':'Excellent','sm.good':'Good','sm.intermediate':'Intermediate','sm.bad':'Bad','sm.very_bad':'Very bad','sm.horrible':'Horrible','sm.very_horrible':'Almost impassable','sm.impassable':'Impassable',
+  kChar:'Character',chOff:'Mostly off-road ({0}% unpaved)',chMix:'Mixed ({0}% unpaved)',chPaved:'Mostly paved',kClimb:'Climb',kOper:'Operator',kMark:'Marking',kSite:'Website',moreInfo:'More information',
+  mtbS:['S0 – very easy: wide, smooth trail','S1 – easy: small obstacles, roots and stones','S2 – moderate: steps and rocks, technique needed','S3 – hard: many technical passages','S4 – very hard: experts only','S5 – extreme','S6 – extreme'],
+  imba:['Very easy (white)','Easy (green)','Intermediate (blue)','Difficult (black)','Very difficult (double black)'],
+  noExport:'No route to export',gpxDefault:'Bike route',gpxBad:'Could not read the GPX file',kSrc:'Source',gpxFile:'GPX file: {0}',kLen:'Length',gpxName:'GPX route',
+  pickFirst:'Choose a route first',starting:'Starting…',sayStart:'Starting navigation',simHint:'Simulation: tap the map to simulate going off-route',simDev:'Simulation: off-route',navEnded:'Navigation ended',
+  offRoute:'You are off the route',arrived:'You have arrived',toDest:'Continue to the destination',inMeters:'In {0} meters, {1}',recalc:'Recalculating route',updated:'Route updated · {0}',recalcFail:'Could not recalculate right now – will retry shortly',
+  aboutIntro:'This app relies entirely on free and open-source services:',aMaps:'Maps',aRouting:'Routing',aTrails:'Marked routes',aSearch:'Address search',backup:'backup',
+  aboutLegend:'Route colours: green – bike path; teal – bike lane; blue – quiet street; yellow – collector road; red – busy road; brown – off-road trail. Data comes from volunteer mapping; ride carefully and use your own judgement.',
+  pinA:'A',pinB:'B'
+}};
+let LANG='he';
+function t(k){let s=I18N[LANG][k]; if(s==null)s=I18N.he[k]; if(s==null)return k;
+  for(let i=1;i<arguments.length;i++)s=s.split('{'+(i-1)+'}').join(arguments[i]); return s;}
+
+/* ===================== CORE: לוגיקה טהורה (ללא DOM) ===================== */
+const CATS=['bike','lane','quiet','medium','busy','trail','foot','other'];
+const SURFS=['paved','gravel','dirt','unk'];
+const PROFILES=[{id:'trekking',kmh:17},{id:'safety',kmh:15},{id:'fastbike',kmh:22},{id:'gravel',kmh:16},{id:'mtb',kmh:12},{id:'shortest',kmh:15}];
+const R_EARTH=6371000, rad=d=>d*Math.PI/180;
+function hav(a,b){const dLa=rad(b[0]-a[0]),dLo=rad(b[1]-a[1]);const s=Math.sin(dLa/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dLo/2)**2;return 2*R_EARTH*Math.asin(Math.min(1,Math.sqrt(s)));}
+function bearing(a,b){const y=Math.sin(rad(b[1]-a[1]))*Math.cos(rad(b[0]));const x=Math.cos(rad(a[0]))*Math.sin(rad(b[0]))-Math.sin(rad(a[0]))*Math.cos(rad(b[0]))*Math.cos(rad(b[1]-a[1]));return(Math.atan2(y,x)*180/Math.PI+360)%360;}
+function angDiff(a,b){return((b-a+540)%360)-180;}
+
+function classify(t){
+  const h=t.highway||'';
+  const cw=[t.cycleway,t['cycleway:left'],t['cycleway:right'],t['cycleway:both']].filter(Boolean);
+  if(h==='cycleway'||cw.includes('track')||(t.bicycle==='designated'&&/^(path|footway|track|pedestrian)$/.test(h)))return'bike';
+  if(cw.some(v=>/lane/.test(v))||t.bicycle_road==='yes'||t.cyclestreet==='yes')return'lane';
+  if(/^(path|track|bridleway)$/.test(h))return'trail';
+  if(/^(footway|pedestrian|steps)$/.test(h))return'foot';
+  if(/^(residential|living_street|service|unclassified|road)$/.test(h))return'quiet';
+  if(/^tertiary/.test(h))return'medium';
+  if(/^(secondary|primary|trunk|motorway)/.test(h))return'busy';
+  return'other';
+}
+function surfGroup(t){
+  const s=t.surface||'', h=t.highway||'', g=t.tracktype||'';
+  if(/^(asphalt|paved|concrete|concrete:.*|paving_stones|sett|cobblestone|unhewn_cobblestone|metal|wood|chipseal)$/.test(s))return'paved';
+  if(/^(compacted|fine_gravel|gravel|pebblestone)$/.test(s))return'gravel';
+  if(s)return'dirt';
+  if(g==='grade1')return'paved'; if(g==='grade2'||g==='grade3')return'gravel'; if(g)return'dirt';
+  if(/^(path|track|bridleway)$/.test(h)||!h)return'unk';
+  return'paved';
+}
+function parseTagStr(s){const o={};(s||'').split(' ').forEach(p=>{const i=p.indexOf('=');if(i>0)o[p.slice(0,i)]=p.slice(i+1);});return o;}
+function ascentOf(coords){let up=0,ref=null;for(const c of coords){const e=c[2];if(e==null||isNaN(e))continue;if(ref===null){ref=e;continue;}if(e>ref+3){up+=e-ref;ref=e;}else if(e<ref-3){ref=e;}}return Math.round(up);}
+
+/* משלים שדות מחושבים במסלול: מרחק מצטבר, פילוח סוגי דרך ומשטח */
+function finalizeRoute(r){
+  const c=r.coords, cum=new Array(c.length); cum[0]=0;
+  for(let i=1;i<c.length;i++)cum[i]=cum[i-1]+hav(c[i-1],c[i]);
+  r.cum=cum; r.dist=cum[c.length-1]||0;
+  r.hasEle=c.some(p=>p[2]!=null&&!isNaN(p[2]));
+  if(r.ascent==null&&r.hasEle)r.ascent=ascentOf(c);
+  r.catM={}; r.surfM={};
+  (r.segs||[]).forEach(s=>{const m=cum[s.b]-cum[s.a];r.catM[s.cat]=(r.catM[s.cat]||0)+m;r.surfM[s.surf]=(r.surfM[s.surf]||0)+m;});
+  if(r.time==null)r.time=r.dist/((r.kmh||15)/3.6)+(r.ascent||0)*6;
+  r.hints=r.hints||[];
+  return r;
+}
+function pct(r,cats){const t=cats.reduce((s,k)=>s+(r.catM[k]||0),0);return r.dist?Math.round(100*t/r.dist):0;}
+
+/* הנחיות פנייה נשמרות כמפתח (key) ולא כטקסט, כדי שיתורגמו בזמן ההצגה */
+const HINT={1:['↑','straight'],2:['↰','left'],3:['↖','slightLeft'],4:['↙','sharpLeft'],5:['↱','right'],6:['↗','slightRight'],7:['↘','sharpRight'],8:['↖','keepLeft'],9:['↗','keepRight']};
+const UTURN=['↶','uturn'];
+function mkHint(i,h,exit){return{i,arrow:h[0],key:h[1],exit:exit||0};}
+function hintFrom(cmd,exit,angle){
+  if(exit>0)return['⟳','roundabout'];
+  if(HINT[cmd])return HINT[cmd];
+  if(Math.abs(angle)>150)return UTURN;
+  return angle<0?HINT[2]:HINT[5];
+}
+function hintFromAngle(a){const s=a<0?0:3, m=Math.abs(a); if(m>150)return UTURN; return HINT[(m>110?4:m>55?2:3)+s];}
+function hintText(h){return h.key==='roundabout'?t('h.roundabout',I18N[LANG].ord[h.exit]||h.exit):t('h.'+h.key);}
+const copyHint=(h,off)=>({i:h.i+off,arrow:h.arrow,key:h.key,exit:h.exit});
+
+/* פענוח תשובת BRouter (GeoJSON) למבנה מסלול אחיד */
+function parseBRouter(gj,profile){
+  const f=gj.features[0], p=f.properties;
+  const coords=f.geometry.coordinates.map(c=>[c[1],c[0],c.length>2?c[2]:null]);
+  const segs=[]; const msgs=p.messages||[];
+  if(msgs.length>1){
+    const H=msgs[0], iLon=H.indexOf('Longitude'), iLat=H.indexOf('Latitude'), iTag=H.indexOf('WayTags');
+    let ptr=0;
+    for(let k=1;k<msgs.length;k++){
+      const lo=+msgs[k][iLon], la=+msgs[k][iLat]; let j=-1;
+      for(let q=ptr+1;q<coords.length;q++){if(Math.abs(Math.round(coords[q][1]*1e6)-lo)<=1&&Math.abs(Math.round(coords[q][0]*1e6)-la)<=1){j=q;break;}}
+      if(j<0)continue;
+      const tg=parseTagStr(msgs[k][iTag]);
+      segs.push({a:ptr,b:j,cat:classify(tg),surf:surfGroup(tg)});
+      ptr=j;
+    }
+    if(segs.length&&ptr<coords.length-1)segs.push({a:ptr,b:coords.length-1,cat:segs[segs.length-1].cat,surf:segs[segs.length-1].surf});
+  }
+  const hints=(p.voicehints||[]).map(v=>mkHint(v[0],hintFrom(v[1],v[2],v[4]),v[2])).filter(h=>h.i>0&&h.i<coords.length);
+  const prof=PROFILES.find(x=>x.id===profile)||PROFILES[0];
+  return finalizeRoute({source:'brouter',coords,segs,hints,kmh:prof.kmh,
+    time:p['total-time']?+p['total-time']:null, ascent:p['filtered ascend']!=null?+p['filtered ascend']:null});
+}
+
+/* פענוח תשובת OSRM (שרת גיבוי) */
+function parseOSRM(j){
+  const rt=j.routes[0]; const coords=rt.geometry.coordinates.map(c=>[c[1],c[0],null]); const hints=[];
+  const MOD={left:HINT[2],right:HINT[5],'slight left':HINT[3],'slight right':HINT[6],'sharp left':HINT[4],'sharp right':HINT[7],uturn:UTURN};
+  let idx=0;
+  rt.legs.forEach(l=>l.steps.forEach(s=>{
+    const m=s.maneuver, n=(s.geometry&&s.geometry.coordinates?s.geometry.coordinates.length:1);
+    if(m.type!=='depart'&&m.type!=='arrive'&&idx>0){
+      const rb=/roundabout|rotary/.test(m.type), h=rb?['⟳','roundabout']:MOD[m.modifier||'straight'];
+      if(h)hints.push(mkHint(Math.min(idx,coords.length-1),h,rb?(m.exit||1):0));
+    }
+    idx+=Math.max(0,n-1);
+  }));
+  return finalizeRoute({source:'osrm',coords,segs:[],hints,time:rt.duration,fallback:true});
+}
+
+/* נקודה על המסלול במרחק m מתחילתו */
+function pointAt(r,m){
+  const cum=r.cum; if(m<=0)return{p:r.coords[0],i:0}; if(m>=r.dist)return{p:r.coords[r.coords.length-1],i:r.coords.length-2};
+  let lo=0,hi=cum.length-1; while(hi-lo>1){const mid=(lo+hi)>>1; if(cum[mid]<=m)lo=mid; else hi=mid;}
+  const a=r.coords[lo],b=r.coords[hi],f=(m-cum[lo])/((cum[hi]-cum[lo])||1);
+  return{p:[a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f],i:lo};
+}
+/* הטלת נקודה על המסלול בטווח המקטעים [i0,i1) */
+function project(r,p,i0,i1){
+  const c=r.coords, kx=Math.cos(rad(p[0]))*111320, ky=110540; let best={d:Infinity,i:0,t:0,along:0};
+  i0=Math.max(0,i0); i1=Math.min(c.length-1,i1);
+  for(let i=i0;i<i1;i++){
+    const ax=(c[i][1]-p[1])*kx, ay=(c[i][0]-p[0])*ky, bx=(c[i+1][1]-p[1])*kx, by=(c[i+1][0]-p[0])*ky;
+    const dx=bx-ax, dy=by-ay, L=dx*dx+dy*dy; let f=L?-(ax*dx+ay*dy)/L:0; f=Math.max(0,Math.min(1,f));
+    const d=Math.hypot(ax+dx*f,ay+dy*f);
+    if(d<best.d)best={d,i,t:f,along:r.cum[i]+f*(r.cum[i+1]-r.cum[i])};
+  }
+  return best;
+}
+/* הנחיות פנייה מגאומטריה בלבד (למסלולי GPX / מסלולים קהילתיים) */
+function hintsFromGeometry(r){
+  const out=[], c=r.coords, W=18; let last=-1e9;
+  for(let i=1;i<c.length-1;i++){
+    if(r.cum[i]-last<35)continue;
+    const a=pointAt(r,r.cum[i]-W).p, b=pointAt(r,r.cum[i]+W).p;
+    if(hav(a,c[i])<5||hav(c[i],b)<5)continue;
+    const d=angDiff(bearing(a,c[i]),bearing(c[i],b));
+    if(Math.abs(d)>=50){out.push(mkHint(i,hintFromAngle(d)));last=r.cum[i];}
+  }
+  return out;
+}
+function sliceRoute(r,j){
+  j=Math.max(0,Math.min(r.coords.length-2,j));
+  const n={source:r.source,name:r.name,kmh:r.kmh,isTrack:r.isTrack,fallback:r.fallback,dest:r.dest,
+    coords:r.coords.slice(j),
+    segs:(r.segs||[]).filter(s=>s.b>j).map(s=>({a:Math.max(0,s.a-j),b:s.b-j,cat:s.cat,surf:s.surf})),
+    hints:r.hints.filter(h=>h.i>j).map(h=>copyHint(h,-j))};
+  const frac=r.dist?(r.dist-r.cum[j])/r.dist:1; n.time=r.time*frac; n.ascent=null;
+  finalizeRoute(n); if(!n.hasEle)n.ascent=r.ascent!=null?Math.round(r.ascent*frac):null;
+  return n;
+}
+function concatRoutes(a,b){
+  const off=a.coords.length;
+  const n={source:b.source,name:b.name,kmh:b.kmh,isTrack:b.isTrack,dest:b.dest,
+    coords:a.coords.concat(b.coords),
+    segs:(a.segs||[]).concat((b.segs||[]).map(s=>({a:s.a+off,b:s.b+off,cat:s.cat,surf:s.surf}))),
+    hints:a.hints.map(h=>copyHint(h,0)).concat(b.hints.map(h=>copyHint(h,off))),
+    time:a.time+b.time, ascent:(a.ascent!=null&&b.ascent!=null)?a.ascent+b.ascent:null};
+  if(a.segs&&a.segs.length&&b.segs&&b.segs.length)n.segs.push({a:off-1,b:off,cat:b.segs[0].cat,surf:b.segs[0].surf});
+  n.trackStart=off;
+  return finalizeRoute(n);
+}
+
+/* בניית מסלול קהילתי מתשובת OSM API (relation/full) */
+function buildTrail(full,relId){
+  const nodes=new Map(), ways=new Map(); let rel=null;
+  full.elements.forEach(e=>{if(e.type==='node')nodes.set(e.id,[e.lat,e.lon]);else if(e.type==='way')ways.set(e.id,e);else if(e.type==='relation'&&e.id===relId)rel=e;});
+  if(!rel)throw new Error('norel');
+  let pend=rel.members.filter(m=>m.type==='way'&&ways.has(m.ref)).map(m=>{const w=ways.get(m.ref);return{pts:w.nodes.map(id=>nodes.get(id)).filter(Boolean),tags:w.tags||{}};}).filter(w=>w.pts.length>1);
+  if(!pend.length)return{rel,route:null,sub:rel.members.filter(m=>m.type==='relation').length};
+  const coords=[], segs=[]; let gaps=0, wayTags=[];
+  const add=(w,rev)=>{const pts=rev?w.pts.slice().reverse():w.pts;const a=Math.max(0,coords.length-1);
+    pts.forEach((p,k)=>{if(k===0&&coords.length&&hav(coords[coords.length-1],p)<1)return;coords.push([p[0],p[1],null]);});
+    segs.push({a,b:coords.length-1,cat:classify(w.tags),surf:surfGroup(w.tags)});wayTags.push(w.tags);};
+  // כיוון המקטע הראשון נקבע לפי החיבור למקטע השני
+  let first=pend.shift(), rev0=false;
+  if(pend.length){const n=pend[0],s=first.pts[0],e=first.pts[first.pts.length-1];
+    const dE=Math.min(hav(e,n.pts[0]),hav(e,n.pts[n.pts.length-1])), dS=Math.min(hav(s,n.pts[0]),hav(s,n.pts[n.pts.length-1])); rev0=dS<dE;}
+  add(first,rev0);
+  while(pend.length){
+    const end=coords[coords.length-1]; let bi=0,bd=Infinity,br=false;
+    for(let k=0;k<pend.length;k++){const w=pend[k];const d1=hav(end,w.pts[0]),d2=hav(end,w.pts[w.pts.length-1]);
+      if(d1<bd){bd=d1;bi=k;br=false;} if(d2<bd){bd=d2;bi=k;br=true;} if(bd<1)break;}
+    if(bd>40)gaps++;
+    add(pend.splice(bi,1)[0],br);
+  }
+  const route=finalizeRoute({source:'trail',coords,segs,isTrack:true,trackStart:0,kmh:14});
+  route.hints=hintsFromGeometry(route); route.gaps=gaps; route.wayTags=wayTags;
+  return{rel,route};
+}
+/* פענוח GPX */
+function parseGPX(xmlText,Parser){
+  const doc=new Parser().parseFromString(xmlText,'application/xml');
+  let pts=[...doc.getElementsByTagName('trkpt')]; if(!pts.length)pts=[...doc.getElementsByTagName('rtept')];
+  const coords=pts.map(p=>{const e=p.getElementsByTagName('ele')[0];return[+p.getAttribute('lat'),+p.getAttribute('lon'),e?+e.textContent:null];}).filter(c=>isFinite(c[0])&&isFinite(c[1]));
+  if(coords.length<2)throw new Error('empty');
+  const nm=doc.getElementsByTagName('name')[0];
+  const r=finalizeRoute({source:'gpx',name:nm&&nm.textContent.trim()?nm.textContent.trim():null,coords,segs:[],isTrack:true,trackStart:0,kmh:15});
+  r.hints=hintsFromGeometry(r); return r;
+}
+function toGPX(r,name){
+  const esc=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+  return'<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="BikeNavigator" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>'+esc(name)+'</name><trkseg>\n'+
+    r.coords.map(c=>'<trkpt lat="'+c[0].toFixed(6)+'" lon="'+c[1].toFixed(6)+'">'+(c[2]!=null?'<ele>'+c[2]+'</ele>':'')+'</trkpt>').join('\n')+'\n</trkseg></trk></gpx>';
+}
+function fmtDist(m){return m<950?Math.max(10,Math.round(m/10)*10)+' '+t('u.m'):(m<20000?(m/1000).toFixed(1):Math.round(m/1000))+' '+t('u.km');}
+function fmtTime(s){const m=Math.max(1,Math.round(s/60));return m<60?m+' '+t('u.min'):Math.floor(m/60)+':'+String(m%60).padStart(2,'0')+' '+t('u.h');}
+/* ===================== /CORE ===================== */
+if(typeof module!=='undefined'){module.exports={I18N,t,setLang:l=>{LANG=l;},hintText,parseBRouter,finalizeRoute,project,pointAt,sliceRoute,concatRoutes,buildTrail,hintsFromGeometry,toGPX,classify,surfGroup,fmtDist,fmtTime,parseOSRM};}
+else (function(){
+/* ===================== APP ===================== */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+const store={get(){try{return JSON.parse(localStorage.getItem('bikenav.v1'))||{};}catch(e){return{};}},set(o){try{localStorage.setItem('bikenav.v1',JSON.stringify(Object.assign(this.get(),o)));}catch(e){}}};
+const saved=store.get();
+LANG=saved.lang==='he'||saved.lang==='en'?saved.lang:(/^(he|iw)/i.test(navigator.language||'')?'he':'en');
+const S={from:null,to:null,vias:[],profile:saved.profile||'trekking',routes:[],active:0,view:'',tok:0,nav:null,sim:null,
+  voice:saved.voice!==false,theme:saved.theme||'auto',me:null,trails:[],trailMeta:null,picked:false};
+/* תוספי Capacitor – קיימים רק כשהאפליקציה רצה כאפליקציית אנדרואיד/iOS */
+const NAT=()=>{const c=window.Capacitor;return c&&c.isNativePlatform&&c.isNativePlatform()&&c.Plugins?c.Plugins:null;};
+const labelOf=p=>p.label||t(p.nameKey||'mapPoint');
+
+function toast(msg,ms){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),ms||3200);}
+async function fetchJSON(url,ms){
+  const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),ms||25000);
+  try{const r=await fetch(url,{signal:ctl.signal});if(!r.ok){const e=new Error('http '+r.status);e.status=r.status;try{e.body=await r.text();}catch(_){}throw e;}return await r.json();}
+  finally{clearTimeout(tm);}
+}
+
+/* ---------- ערכת צבעים, שפה ---------- */
+function applyTheme(){
+  if(S.theme==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',S.theme);
+  $('themeState').textContent=t('th.'+S.theme);
+  $('voiceState').textContent=t(S.voice?'on':'off'); $('btnMute').textContent=S.voice?'🔊':'🔇';
+  $('langState').textContent=t('langName');
+}
+function applyLang(){
+  const de=document.documentElement; de.lang=LANG; de.dir=LANG==='he'?'rtl':'ltr'; document.title=t('appTitle');
+  document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));
+  document.querySelectorAll('[data-i18n-ph]').forEach(e=>e.placeholder=t(e.dataset.i18nPh));
+  document.querySelectorAll('[data-i18n-title]').forEach(e=>{e.title=t(e.dataset.i18nTitle);e.setAttribute('aria-label',e.title);});
+  $('chips').innerHTML=PROFILES.map(p=>`<button class="chip ${p.id===S.profile?'on':''}" data-p="${p.id}">${t('p.'+p.id)}</button>`).join('');
+  $('baseList').innerHTML=Object.keys(BASES).map(k=>`<label><input type="radio" name="base" value="${k}" ${k===curBase?'checked':''}>${t('b.'+k)}</label>`).join('');
+  $('overList').innerHTML=Object.keys(OVERS).map(k=>`<label><input type="checkbox" value="${k}" ${overOn.has(k)?'checked':''}>${t('o.'+k)}</label>`).join('');
+  if(S.from)$('inFrom').value=labelOf(S.from); if(S.to)$('inTo').value=labelOf(S.to);
+  $('sugg').hidden=true; map.closePopup(); drawMarkers(); applyTheme();
+  if(S.view)render(); else $('sheet').classList.remove('open');
+}
+
+/* ---------- מפה ---------- */
+const map=L.map('map',{zoomControl:false,attributionControl:true}).setView(saved.view?saved.view.slice(0,2):[32.08,34.79],saved.view?saved.view[2]:13);
+map.attributionControl.setPrefix('');
+const OSMA='© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
+const BASES={
+  cyclosm:L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',{maxZoom:20,subdomains:'abc',attribution:OSMA+' · CyclOSM'}),
+  osm:L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:OSMA}),
+  topo:L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,subdomains:'abc',attribution:OSMA+' · OpenTopoMap'})
+};
+const OVERS={
+  cycling:L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png',{maxZoom:18,opacity:.8,attribution:'Waymarked Trails'}),
+  mtb:L.tileLayer('https://tile.waymarkedtrails.org/mtb/{z}/{x}/{y}.png',{maxZoom:18,opacity:.8,attribution:'Waymarked Trails'})
+};
+let curBase=BASES[saved.base]?saved.base:'cyclosm'; const overOn=new Set((saved.overs||[]).filter(k=>OVERS[k]));
+function setBase(k){map.removeLayer(BASES[curBase]);curBase=k;BASES[k].addTo(map).bringToBack();store.set({base:k});}
+BASES[curBase].addTo(map); overOn.forEach(k=>OVERS[k].addTo(map));
+$('baseList').onchange=e=>setBase(e.target.value);
+$('overList').onchange=e=>{const k=e.target.value;if(e.target.checked){overOn.add(k);OVERS[k].addTo(map);}else{overOn.delete(k);map.removeLayer(OVERS[k]);}store.set({overs:[...overOn]});};
+map.on('moveend',()=>{const c=map.getCenter();store.set({view:[c.lat,c.lng,map.getZoom()]});});
+
+const routeLayer=L.layerGroup().addTo(map), markLayer=L.layerGroup().addTo(map), meLayer=L.layerGroup().addTo(map);
+const pin=(cls,txt)=>L.divIcon({className:'',html:`<div class="pin ${cls}"><span>${txt}</span></div>`,iconSize:[26,26],iconAnchor:[13,26]});
+
+function drawRoutes(){
+  routeLayer.clearLayers();
+  S.routes.forEach((r,k)=>{ if(k===S.active)return;
+    L.polyline(r.coords,{className:'seg-alt',weight:6,opacity:.75}).on('click',e=>{L.DomEvent.stop(e);selectRoute(k);}).addTo(routeLayer);});
+  const r=S.routes[S.active]; if(!r)return;
+  L.polyline(r.coords,{className:'casing',weight:10,opacity:.9,interactive:false}).addTo(routeLayer);
+  if(r.segs&&r.segs.length){
+    let run=null; const flush=()=>{if(run)L.polyline(r.coords.slice(run.a,run.b+1),{className:'seg-'+run.cat,weight:6,opacity:1,interactive:false}).addTo(routeLayer);};
+    r.segs.forEach(s=>{if(run&&run.cat===s.cat&&run.b===s.a)run.b=s.b;else{flush();run={a:s.a,b:s.b,cat:s.cat};}}); flush();
+  }else L.polyline(r.coords,{className:'seg-quiet',weight:6,interactive:false}).addTo(routeLayer);
+}
+function drawMarkers(){
+  markLayer.clearLayers();
+  const mk=(p,cls,txt,key,idx)=>{const m=L.marker([p.lat,p.lng],{icon:pin(cls,txt),draggable:!S.nav}).addTo(markLayer);
+    m.on('dragend',()=>{const ll=m.getLatLng();const np={lat:ll.lat,lng:ll.lng};
+      if(key==='via'){S.vias[idx]=np;computeRoutes();}else{setPoint(key,np);labelPoint(np,key);}});
+    if(key==='via')m.on('click',()=>{S.vias.splice(idx,1);drawMarkers();computeRoutes();toast(t('viaRemoved'));});};
+  if(S.from&&!S.from.isMe)mk(S.from,'a',t('pinA'),'from');
+  S.vias.forEach((v,i)=>mk(v,'v',i+1,'via',i));
+  if(S.to)mk(S.to,'b',t('pinB'),'to');
+}
+function fitRoute(r){if(!r||!r.coords.length)return;const wide=innerWidth>900, sh=$('sheet').classList.contains('open')?$('sheet').offsetHeight:0, rtl=LANG==='he';
+  map.fitBounds(L.latLngBounds(r.coords),wide?{paddingTopLeft:[rtl?40:470,40],paddingBottomRight:[rtl?470:40,40]}:{paddingTopLeft:[30,170],paddingBottomRight:[30,sh+25]});}
+/* דירוג חלופות: זמן הרכיבה, עם קנס כבד לכביש סואן ובונוס לשבילי אופניים */
+function score(r){const d=r.dist||1,f=k=>(r.catM[k]||0)/d;return r.time*(1+1.5*f('busy')+0.4*f('medium')-0.25*(f('bike')+f('lane')));}
+function rankRoutes(){if(S.picked||S.routes.length<2)return;S.routes.sort((a,b)=>score(a)-score(b));S.active=0;drawRoutes();render();}
+
+/* ---------- מיקום ---------- */
+let meMarker=null, meAcc=null;
+function showMe(lat,lng,acc,heading){
+  if(!meMarker){meMarker=L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div class="me"></div>',iconSize:[22,22],iconAnchor:[11,11]}),interactive:false,zIndexOffset:1000}).addTo(meLayer);
+    meAcc=L.circle([lat,lng],{radius:acc||0,className:'acc',weight:1,opacity:.5,fillOpacity:.1,interactive:false}).addTo(meLayer);}
+  meMarker.setLatLng([lat,lng]); meAcc.setLatLng([lat,lng]).setRadius(Math.min(acc||0,300));
+  const el=meMarker.getElement(); if(el){const d=el.firstChild; if(heading!=null&&!isNaN(heading)){d.style.setProperty('--hd',heading+'deg');d.style.setProperty('--hdshow','block');}else d.style.setProperty('--hdshow','none');}
+  S.me={lat,lng,acc};
+}
+function geoErr(e){toast(t(e&&e.code===1?'geoDenied':'geoFail'),5000);}
+function locateOnce(center){
+  return new Promise((res,rej)=>{
+    if(!navigator.geolocation){geoErr();return rej();}
+    navigator.geolocation.getCurrentPosition(p=>{showMe(p.coords.latitude,p.coords.longitude,p.coords.accuracy,p.coords.heading);
+      if(center)map.setView([p.coords.latitude,p.coords.longitude],Math.max(map.getZoom(),16));res(S.me);},e=>{geoErr(e);rej(e);},{enableHighAccuracy:true,timeout:12000,maximumAge:5000});
+  });
+}
+
+/* ---------- חיפוש מקומות ---------- */
+function photonLabel(p){const main=p.name||[p.street,p.housenumber].filter(Boolean).join(' ')||p.city||t('place');
+  const sub=[p.name&&p.street?[p.street,p.housenumber].filter(Boolean).join(' '):'',p.city||p.county,p.country].filter(Boolean).join(', ');return{main,sub};}
+const photonLang=()=>LANG==='en'?'&lang=en':''; // Photon אינו תומך ב-lang=he; בלי הפרמטר מוחזר השם המקומי
+async function geocode(q){
+  const m=q.match(/^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/);
+  if(m)return[{lat:+m[1],lng:+m[2],main:q.trim(),sub:t('coords')}];
+  const c=map.getCenter(); let out=[];
+  try{const j=await fetchJSON(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lat=${c.lat.toFixed(4)}&lon=${c.lng.toFixed(4)}${photonLang()}`,9000);
+    out=j.features.map(f=>Object.assign({lat:f.geometry.coordinates[1],lng:f.geometry.coordinates[0]},photonLabel(f.properties)));}catch(e){}
+  if(!out.length){try{const j=await fetchJSON(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=jsonv2&limit=5&accept-language=${LANG}`,9000);
+    out=j.map(x=>{const parts=x.display_name.split(', ');return{lat:+x.lat,lng:+x.lon,main:parts[0],sub:parts.slice(1,4).join(', ')};});}catch(e){}}
+  return out;
+}
+async function labelPoint(p,key){
+  try{const j=await fetchJSON(`https://photon.komoot.io/reverse?lat=${p.lat}&lon=${p.lng}${photonLang()}`,7000);
+    if(j.features&&j.features[0]){const l=photonLabel(j.features[0].properties);p.label=l.main+(l.sub?', '+l.sub.split(', ')[0]:'');
+      if(key==='from'&&S.from===p)$('inFrom').value=p.label; if(key==='to'&&S.to===p)$('inTo').value=p.label;}}catch(e){}
+}
+let suggTimer=null, suggTok=0;
+function showSugg(key,items){
+  const box=$('sugg'); let html='';
+  if(key==='from')html+=`<button data-me="1"><b>◎ ${t('myLoc')}</b></button>`;
+  html+=items.map((it,i)=>`<button data-i="${i}"><b>${esc(it.main)}</b><small>${esc(it.sub||'')}</small></button>`).join('');
+  box.innerHTML=html; box.hidden=!html; box._items=items; box._key=key;
+}
+function onType(key,el){
+  clearTimeout(suggTimer); const q=el.value.trim();
+  if(q.length<2){showSugg(key,[]);return;}
+  suggTimer=setTimeout(async()=>{const tk=++suggTok;const items=await geocode(q);if(tk===suggTok)showSugg(key,items);},450);
+}
+['from','to'].forEach(key=>{const el=$(key==='from'?'inFrom':'inTo');
+  el.addEventListener('input',()=>onType(key,el));
+  el.addEventListener('focus',()=>{if(key==='from'&&!el.value)showSugg('from',[]);});
+  el.addEventListener('keydown',async e=>{if(e.key!=='Enter')return;clearTimeout(suggTimer);const tk=++suggTok;const items=await geocode(el.value.trim());if(tk!==suggTok)return;
+    if(items.length===1)pickSugg(key,items[0]);else if(items.length)showSugg(key,items);else toast(t('noResults'));});
+});
+function pickSugg(key,it){$('sugg').hidden=true;document.activeElement&&document.activeElement.blur();
+  setPoint(key,{lat:it.lat,lng:it.lng,label:it.main});map.setView([it.lat,it.lng],Math.max(map.getZoom(),14));}
+$('sugg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const box=$('sugg');
+  if(b.dataset.me){$('sugg').hidden=true;useMyLocation();return;}pickSugg(box._key,box._items[+b.dataset.i]);});
+async function useMyLocation(){try{const me=await locateOnce(true);setPoint('from',{lat:me.lat,lng:me.lng,nameKey:'myLoc',isMe:true});}catch(e){}}
+
+function setPoint(key,p){S[key]=p; $(key==='from'?'inFrom':'inTo').value=labelOf(p); drawMarkers(); if(S.to)computeRoutes();}
+document.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{const k=b.dataset.clear;S[k]=null;$(k==='from'?'inFrom':'inTo').value='';
+  if(k==='to'){S.vias=[];S.routes=[];S.tok++;drawRoutes();closeSheet();}drawMarkers();$('sugg').hidden=true;});
+$('btnSwap').onclick=()=>{const a=S.from&&!S.from.isMe?S.from:(S.me?{lat:S.me.lat,lng:S.me.lng,nameKey:'myLoc'}:null),b=S.to;if(!b){toast(t('noDest'));return;}
+  S.from=b;S.to=a;S.vias.reverse();$('inFrom').value=labelOf(b);$('inTo').value=a?labelOf(a):'';drawMarkers();if(S.to)computeRoutes();};
+
+/* לחיצה על המפה: תפריט נקודה */
+function mapMenu(ll){
+  const h=`<div style="display:flex;flex-direction:column;gap:6px;min-width:150px">
+    <button class="btn" data-pt="to">${t('navHere')}</button><button class="btn sec" data-pt="from">${t('fromHere')}</button>
+    ${S.to?`<button class="btn sec" data-pt="via">${t('addVia')}</button>`:''}</div>`;
+  const pop=L.popup({closeButton:false,offset:[0,-4]}).setLatLng(ll).setContent(h).openOn(map);
+  pop.getElement().addEventListener('click',e=>{const b=e.target.closest('[data-pt]');if(!b)return;map.closePopup();
+    const p={lat:ll.lat,lng:ll.lng};
+    if(b.dataset.pt==='via'){S.vias.push(p);drawMarkers();computeRoutes();}else{setPoint(b.dataset.pt,p);labelPoint(p,b.dataset.pt);}});
+}
+map.on('click',e=>{
+  document.querySelectorAll('.pop.open').forEach(p=>p.classList.remove('open')); $('sugg').hidden=true;
+  if(S.sim&&S.nav){S.sim.hold={lat:e.latlng.lat,lng:e.latlng.lng};toast(t('simDev'));return;}
+  if(S.nav)return; mapMenu(e.latlng);});
+map.on('contextmenu',e=>{if(!S.nav)mapMenu(e.latlng);});
+map.on('dragstart',()=>{if(S.nav){S.nav.follow=false;}});
+
+/* ---------- חישוב מסלול ---------- */
+$('chips').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;S.profile=b.dataset.p;store.set({profile:S.profile});
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c===b));if(S.to)computeRoutes();};
+
+async function brouter(pts,profile,alt){
+  const ll=pts.map(p=>p[1].toFixed(6)+','+p[0].toFixed(6)).join('|');
+  const j=await fetchJSON(`https://brouter.de/brouter?lonlats=${ll}&profile=${profile}&alternativeidx=${alt}&format=geojson&timode=2`,30000);
+  return parseBRouter(j,profile);
+}
+async function osrm(pts){
+  const ll=pts.map(p=>p[1].toFixed(6)+','+p[0].toFixed(6)).join(';');
+  const j=await fetchJSON(`https://routing.openstreetmap.de/routed-bike/route/v1/driving/${ll}?overview=full&geometries=geojson&steps=true`,25000);
+  if(j.code!=='Ok')throw new Error('osrm');return parseOSRM(j);
+}
+/* מסלול בין נקודות: BRouter, ואם נכשל – שרת גיבוי */
+async function routeBetween(pts,alt){
+  try{return await brouter(pts,S.profile,alt||0);}
+  catch(e){if(alt)throw e;return await osrm(pts);}
+}
+async function computeRoutes(){
+  if(S.nav||!S.to)return;
+  if(!S.from){ if(S.me)S.from={lat:S.me.lat,lng:S.me.lng,nameKey:'myLoc',isMe:true};
+    else{try{const me=await locateOnce(false);S.from={lat:me.lat,lng:me.lng,nameKey:'myLoc',isMe:true};}catch(e){toast(t('needFrom'));return;}}
+    $('inFrom').value=labelOf(S.from); }
+  const tok=++S.tok, pts=[S.from,...S.vias,S.to].map(p=>[p.lat,p.lng]);
+  S.trailMeta=null; S.view=''; openSheet(t('calcT'),`<p><i class="spin"></i>${t('calcB')}</p>`);
+  try{
+    const r0=await routeBetween(pts,0); if(tok!==S.tok)return;
+    r0.dest=pts[pts.length-1]; r0.vias=pts.slice(1,-1);
+    S.routes=[r0];S.active=0;S.picked=false;S.view='routes';drawRoutes();render();fitRoute(r0);
+    if(r0.fallback)return;
+    for(const k of[1,2]){ // חלופות
+      try{const r=await brouter(pts,S.profile,k); if(tok!==S.tok||S.nav)return;
+        r.dest=r0.dest;r.vias=r0.vias;
+        if(!S.routes.some(x=>Math.abs(x.dist-r.dist)<40&&Math.abs(x.time-r.time)<20)){S.routes.push(r);drawRoutes();render();}}catch(e){break;}
+    }
+    rankRoutes();
+  }catch(e){ if(tok!==S.tok)return;
+    const body=(e.body||'')+'';
+    openSheet(t('noRouteT'),`<div class="note">${t(/not mapped|position/.test(body)?'errFar':'errNet')}</div><div class="btns"><button class="btn" data-act="retry">${t('retry')}</button></div>`);
+  }
+}
+function selectRoute(k){S.picked=true;S.active=k;drawRoutes();render();}
+
+/* ---------- גיליון תוצאות ---------- */
+function openSheet(title,html){$('sheetTitle').textContent=title;$('sheetBody').innerHTML=html;$('sheet').classList.add('open');$('sheet').classList.remove('collapsed');$('sheetToggle').textContent='▾';}
+function closeSheet(){$('sheet').classList.remove('open');S.view='';}
+$('sheetHead').onclick=()=>{const c=$('sheet').classList.toggle('collapsed');$('sheetToggle').textContent=c?'▴':'▾';};
+
+function barHTML(m,total,keys,prefix,cssPrefix){
+  keys=keys.filter(k=>m[k]>total*0.004); if(!keys.length)return'';
+  return`<div class="bar">${keys.map(k=>`<i style="width:${(100*m[k]/total).toFixed(1)}%;background:var(${cssPrefix+k})"></i>`).join('')}</div>
+  <div class="legend">${keys.map(k=>`<span style="--k:var(${cssPrefix+k})">${t(prefix+k)} · ${fmtDist(m[k])}</span>`).join('')}</div>`;
+}
+function elevHTML(r){
+  if(!r.hasEle)return'';
+  const n=Math.min(240,r.coords.length), pts=[]; let mn=Infinity,mx=-Infinity;
+  for(let k=0;k<n;k++){const i=Math.round(k*(r.coords.length-1)/(n-1||1));const e=r.coords[i][2];if(e==null)continue;pts.push([r.cum[i],e]);mn=Math.min(mn,e);mx=Math.max(mx,e);}
+  if(pts.length<2)return''; const span=Math.max(mx-mn,15);
+  const d=pts.map((p,k)=>(k?'L':'M')+(300*p[0]/r.dist).toFixed(1)+','+(64-56*(p[1]-mn)/span).toFixed(1)).join(' ');
+  return`<h3 class="sec">${t('elevH')} · ${Math.round(mn)}–${Math.round(mx)} ${t('u.m')}${r.ascent!=null?' · '+t('climb',r.ascent+' '+t('u.m')):''}</h3>
+  <svg class="elev" viewBox="0 0 300 70" preserveAspectRatio="none" style="direction:ltr"><path class="area" d="${d} L300,70 L0,70 Z"/></svg>`;
+}
+function detailHTML(r){
+  let h='';
+  if(r.fallback)h+=`<div class="note">${t('fbNote')}</div>`;
+  if(r.catM.busy>Math.max(300,r.dist*0.08))h+=`<div class="note">${t('busyNote',fmtDist(r.catM.busy))}</div>`;
+  if(r.dist&&Object.keys(r.catM).length)h+=`<h3 class="sec">${t('wayType')}</h3>`+barHTML(r.catM,r.dist,CATS,'cat.','--c-')+`<h3 class="sec">${t('surface')}</h3>`+barHTML(r.surfM,r.dist,SURFS,'sf.','--sf-');
+  h+=elevHTML(r);
+  if(r.hints.length)h+=`<details class="steps"><summary>${t('steps',r.hints.length)}</summary>${r.hints.map((x,k)=>`<div class="step"><span class="ar">${x.arrow}</span><span>${hintText(x)}<br><small class="muted">${t('after',fmtDist(r.cum[x.i]-(k?r.cum[r.hints[k-1].i]:0)))}</small></span></div>`).join('')}</details>`;
+  return h;
+}
+function summaryLine(r){return`<b>${fmtTime(r.time)}</b> · ${fmtDist(r.dist)}${r.ascent!=null?' · ↗ '+r.ascent+' '+t('u.m'):''}`;}
+function render(){
+  if(S.view==='routes'){
+    const r=S.routes[S.active]; let h=''; const fast=S.routes.reduce((m,x)=>x.time<m.time?x:m,S.routes[0]);
+    h+=S.routes.map((x,k)=>{const bp=pct(x,['bike','lane']),bz=pct(x,['busy']);
+      return`<button class="alt ${k===S.active?'on':''}" data-route="${k}">${summaryLine(x)}
+      <div class="sub">${k===0?`<span class="tag good">${t('rec')}</span>`:`<span class="tag">${x===fast?t('fastest'):t('altN',k)}</span>`}${x.fallback?'':`<span class="tag ${bp>=40?'good':''}">${t('bikePct',bp)}</span><span class="tag ${bz>=8?'bad':''}">${t('busyPct',bz)}</span>`}</div></button>`;}).join('');
+    h+=`<div class="btns"><button class="btn" data-act="go">${t('start')}</button><button class="btn sec" data-act="gpx">${t('gpxExp')}</button></div>`+detailHTML(r);
+    h+=`<p class="muted small">${t('tip')}</p>`;
+    openSheetKeep(t('routeTitle',fmtDist(r.dist)),h);
+  }else if(S.view==='trail'){
+    const r=S.routes[0], m=trailKV(S.trailMeta||{},r); let h='';
+    h+=`<p style="margin:2px 0 6px">${summaryLine(r)} <span class="muted small">${t('estTime')}</span></p>`;
+    if(m.kv.length)h+='<dl class="kv">'+m.kv.map(x=>`<dt>${esc(x[0])}</dt><dd>${x[2]?x[1]:esc(x[1])}</dd>`).join('')+'</dl>';
+    if(m.desc)h+=`<p class="small" dir="auto">${esc(m.desc)}</p>`;
+    if(r.gaps)h+=`<div class="note">${t('gapsNote',r.gaps)}</div>`;
+    h+=`<div class="btns"><button class="btn" data-act="go">${t('rideAlong')}</button><button class="btn sec" data-act="tostart">${t('toStart')}</button></div>
+        <div class="btns"><button class="btn sec" data-act="gpx">${t('gpxExp')}</button>${S.trails.length?`<button class="btn sec" data-act="backlist">${t('back')}</button>`:''}</div>`+detailHTML(r);
+    openSheetKeep(r.name||t(r.source==='gpx'?'gpxName':'route'),h);
+  }else if(S.view==='trails'){
+    let h=`<div class="row" style="margin-bottom:6px"><div class="field"><input id="trailQ" placeholder="${t('trailPh')}" enterkeyhint="search"></div><button class="btn sec" data-act="trailsearch">${t('search')}</button></div>`;
+    h+=S.trails.length?S.trails.map((x,k)=>`<button class="trail" data-trail="${k}"><b dir="auto">${esc(x.name||t('noName'))}</b><br><span class="tag">${t(x.site==='mtb'?'tMtb':'tBike')}</span><span class="tag">${I18N[LANG]['g.'+x.group]||t('route')}</span></button>`).join('')
+      :`<p class="muted">${t('noTrails')}</p>`;
+    h+=`<p class="muted small">${t('trailSrc')}</p>`;
+    openSheetKeep(t('trailsBtn'),h);
+  }
+}
+function openSheetKeep(title,html){const col=$('sheet').classList.contains('collapsed')&&$('sheet').classList.contains('open');const sc=$('sheetBody').scrollTop;openSheet(title,html);if(col){$('sheet').classList.add('collapsed');$('sheetToggle').textContent='▴';}$('sheetBody').scrollTop=sc;}
+
+$('sheetBody').addEventListener('click',e=>{
+  const rt=e.target.closest('[data-route]'); if(rt){selectRoute(+rt.dataset.route);return;}
+  const tr=e.target.closest('[data-trail]'); if(tr){loadTrail(S.trails[+tr.dataset.trail]);return;}
+  const b=e.target.closest('[data-act]'); if(!b)return; const a=b.dataset.act;
+  if(a==='go')startNav(false); else if(a==='gpx')exportGPX(); else if(a==='retry')computeRoutes();
+  else if(a==='backlist'){S.view='trails';S.routes=[];drawRoutes();render();}
+  else if(a==='trailsearch')searchTrails($('trailQ').value.trim());
+  else if(a==='tostart'){const r=S.routes[0],c=r.coords[0];S.vias=[];S.from=null;$('inFrom').value='';setPoint('to',{lat:c[0],lng:c[1],label:t('startOf',r.name||t('route'))});}
+});
+$('sheetBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='trailQ')searchTrails(e.target.value.trim());});
+
+/* ---------- מסלולים קהילתיים ---------- */
+const merc=(lat,lng)=>[lng*20037508.34/180,Math.log(Math.tan((90+lat)*Math.PI/360))/(Math.PI/180)*20037508.34/180];
+async function trailQuery(path){
+  const res=await Promise.allSettled(['cycling','mtb'].map(site=>fetchJSON(`https://${site}.waymarkedtrails.org/api/v1/list/${path}`,20000).then(j=>(j.results||[]).filter(x=>x.type==='relation').map(x=>Object.assign(x,{site})))));
+  if(res.every(r=>r.status==='rejected'))throw new Error('net');
+  const seen=new Set(), out=[]; res.forEach(r=>r.status==='fulfilled'&&r.value.forEach(x=>{if(!seen.has(x.id)){seen.add(x.id);out.push(x);}}));
+  return out;
+}
+async function showTrails(){
+  S.tok++; S.view=''; const b=map.getBounds(), a=merc(b.getSouth(),b.getWest()), c=merc(b.getNorth(),b.getEast());
+  openSheet(t('trailsBtn'),`<p><i class="spin"></i>${t('trailsLoading')}</p>`);
+  try{S.trails=await trailQuery(`by_area?bbox=${a[0].toFixed(0)},${a[1].toFixed(0)},${c[0].toFixed(0)},${c[1].toFixed(0)}&limit=40`);
+    S.view='trails';S.routes=[];drawRoutes();render();
+    if(!overOn.has('cycling')&&!overOn.has('mtb')){['cycling','mtb'].forEach(k=>{overOn.add(k);OVERS[k].addTo(map);});store.set({overs:[...overOn]});document.querySelectorAll('#overList input').forEach(i=>i.checked=true);}
+  }catch(e){openSheet(t('trailsBtn'),`<div class="note">${t('trailsErr')}</div>`);}
+}
+async function searchTrails(q){
+  if(q.length<2)return; S.view=''; openSheet(t('trailsBtn'),`<p><i class="spin"></i>${t('searching')}</p>`);
+  try{S.trails=await trailQuery(`search?query=${encodeURIComponent(q)}&limit=20`);S.view='trails';render();}
+  catch(e){openSheet(t('trailsBtn'),`<div class="note">${t('searchErr')}</div>`);}
+}
+/* פרטי מסלול קהילתי – מחושבים בזמן ההצגה כדי שיתורגמו עם החלפת שפה */
+function trailKV(meta,route){
+  const kv=[], add=(k,v,raw)=>{if(v)kv.push([t(k),v,raw]);};
+  if(meta.gpx){add('kSrc',t('gpxFile',meta.gpx));add('kLen',fmtDist(route.dist));return{kv,desc:''};}
+  const g=meta.tags||{}, det=meta.det, L=I18N[LANG];
+  add('kType',t(g.route==='mtb'||meta.site==='mtb'?'vMtb':'vBike'));
+  add('kNet',L['net.'+g.network]||g.network);
+  add('kOffLen',g.distance?(/[a-zא-ת]/i.test(g.distance)?g.distance:g.distance+' '+t('u.km')):'');
+  add('kMapLen',fmtDist(route.dist));
+  add('kLoop',g.roundtrip==='yes'?t('yes'):(hav(route.coords[0],route.coords[route.coords.length-1])<150?t('yesLooks'):''));
+  const ways=route.wayTags||[]; const maxOf=key=>{let m=-1;ways.forEach(w=>{const v=parseInt(w[key],10);if(!isNaN(v))m=Math.max(m,v);});return m;};
+  const val=key=>g[key]!=null&&!isNaN(parseInt(g[key],10))?parseInt(g[key],10):maxOf(key);
+  const sc=val('mtb:scale'); if(sc>=0&&L.mtbS[sc])add(g['mtb:scale']!=null?'kTech':'kTechMax',L.mtbS[sc]);
+  const im=val('mtb:scale:imba'); if(im>=0&&L.imba[im])add('kImba',L.imba[im]);
+  const up=val('mtb:scale:uphill'); if(up>=0)add('kUphill',t('uphillV',up));
+  const sm={}; ways.forEach(w=>{if(w.smoothness)sm[w.smoothness]=(sm[w.smoothness]||0)+1;}); const top=Object.keys(sm).sort((a,b)=>sm[b]-sm[a])[0];
+  add('kSmooth',top?(L['sm.'+top]||top):'');
+  const off=route.dist?Math.round(100*((route.surfM.dirt||0)+(route.surfM.gravel||0)+(route.surfM.unk||0))/route.dist):0;
+  add('kChar',off>=60?t('chOff',off):off>=25?t('chMix',off):t('chPaved'));
+  add('kClimb',g.ascent?g.ascent+' '+t('u.m'):''); add('kOper',g.operator||(det&&det.operator)); add('kMark',g.ref||g['osmc:symbol']);
+  const url=g.website||g.url||(det&&det.url); if(url&&/^https?:\/\//.test(url))add('kSite',`<a href="${esc(url)}" target="_blank" rel="noopener">${t('moreInfo')}</a>`,true);
+  return{kv,desc:g['description:'+LANG]||g.description||(det&&det.description)||g.note||''};
+}
+async function loadTrail(x){
+  const tok=++S.tok; S.view=''; openSheet(x.name||t('route'),`<p><i class="spin"></i>${t('loadingTrail')}</p>`);
+  const backBtn=`<div class="btns"><button class="btn sec" data-act="backlist">${t('back')}</button></div>`;
+  try{
+    const [det,full]=await Promise.all([fetchJSON(`https://${x.site}.waymarkedtrails.org/api/v1/details/relation/${x.id}`,15000).catch(()=>null),
+      fetchJSON(`https://api.openstreetmap.org/api/0.6/relation/${x.id}/full.json`,45000)]);
+    if(tok!==S.tok)return;
+    const b=buildTrail(full,x.id);
+    if(!b.route){openSheet(x.name||t('route'),`<div class="note">${t('superNote',b.sub)}</div>`+backBtn);return;}
+    const r=b.route, g=b.rel.tags||{}; r.name=g['name:'+LANG]||g.name||x.name||''; if(x.site==='mtb')r.kmh=11; r.time=null; finalizeRoute(r); r.hints=hintsFromGeometry(r);
+    S.trailMeta={tags:g,det,site:x.site};
+    S.routes=[r];S.active=0;S.view='trail';S.to=null;S.vias=[];$('inTo').value='';drawMarkers();drawRoutes();render();fitRoute(r);
+  }catch(e){if(tok!==S.tok)return;openSheet(x.name||t('route'),`<div class="note">${t('trailErr')}</div>`+backBtn);}
+}
+
+/* ---------- GPX ---------- */
+async function exportGPX(){
+  const r=S.routes[S.active]; if(!r){toast(t('noExport'));return;}
+  const name=r.name||(t('gpxDefault')+' '+new Date().toLocaleDateString(LANG==='he'?'he-IL':'en-GB')), gpx=toGPX(r,name), P=NAT();
+  if(P&&P.Filesystem&&P.Share){ // באפליקציה: שמירה לקובץ זמני ושיתוף
+    try{const w=await P.Filesystem.writeFile({path:'bike-route.gpx',data:gpx,directory:'CACHE',encoding:'utf8'});await P.Share.share({title:name,url:w.uri});}catch(e){}
+    return;
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([gpx],{type:'application/gpx+xml'}));a.download='bike-route.gpx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+$('gpxFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const r=parseGPX(await f.text(),DOMParser);S.tok++;S.trails=[];S.trailMeta={gpx:f.name};
+    S.routes=[r];S.active=0;S.view='trail';S.to=null;S.vias=[];$('inTo').value='';drawMarkers();drawRoutes();render();fitRoute(r);}
+  catch(err){toast(t('gpxBad'));}};
+
+/* ---------- ניווט ---------- */
+function say(txt){
+  if(!S.voice)return; const lang=LANG==='he'?'he-IL':'en-US', P=NAT();
+  if(P&&P.TextToSpeech){P.TextToSpeech.speak({text:txt,lang,rate:1,queueStrategy:0}).catch(()=>{});return;}
+  if(!('speechSynthesis' in window))return;
+  try{const u=new SpeechSynthesisUtterance(txt);u.lang=lang;const re=LANG==='he'?/^(he|iw)/i:/^en/i;const v=speechSynthesis.getVoices().find(v=>re.test(v.lang));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}
+}
+function hush(){const P=NAT();try{if(P&&P.TextToSpeech)P.TextToSpeech.stop().catch(()=>{});else speechSynthesis.cancel();}catch(e){}}
+let wake=null;
+async function keepAwake(on){
+  const P=NAT();
+  try{ if(P&&P.KeepAwake){await (on?P.KeepAwake.keepAwake():P.KeepAwake.allowSleep());return;}
+    if(on&&'wakeLock' in navigator){wake=await navigator.wakeLock.request('screen');}else if(wake){await wake.release();wake=null;} }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(S.nav&&document.visibilityState==='visible')keepAwake(true);});
+
+function startNav(sim){
+  const r=S.routes[S.active]; if(!r){toast(t('pickFirst'));return;}
+  if(!sim&&!navigator.geolocation){geoErr();return;}
+  S.routes=[r];S.active=0;S.tok++;
+  S.nav={route:r,i:0,along:0,off:0,rerouting:false,lastReroute:0,follow:true,pos:null,t0:Date.now(),fails:0};
+  document.body.classList.add('nav'); map.closePopup(); drawRoutes(); drawMarkers(); keepAwake(true);
+  setBanner(r.hints[0]?r.hints[0].arrow:'↑','',t('starting'),false); say(t('sayStart'));
+  if(sim){S.sim={along:0,hold:null,timer:setInterval(simTick,700)};toast(t('simHint'),5000);}
+  else S.nav.watch=navigator.geolocation.watchPosition(p=>onPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy,p.coords.speed,p.coords.heading),
+    e=>{geoErr(e);if(e.code===1)stopNav();},{enableHighAccuracy:true,maximumAge:1000,timeout:20000});
+}
+function stopNav(silent){
+  const n=S.nav; if(!n)return;
+  if(n.watch!=null)navigator.geolocation.clearWatch(n.watch);
+  if(S.sim){clearInterval(S.sim.timer);S.sim=null;}
+  S.nav=null; document.body.classList.remove('nav'); $('navTop').classList.remove('warn'); keepAwake(false);
+  if(!silent)hush();
+  drawMarkers(); if(S.view)render(); if(!silent)toast(t('navEnded'));
+}
+function simTick(){
+  const n=S.nav, s=S.sim; if(!n||!s)return;
+  if(s.hold){onPos(s.hold.lat,s.hold.lng,8,0,null);return;}
+  if(n.rerouting)return;
+  s.along=Math.min(n.route.dist,s.along+11); const q=pointAt(n.route,s.along);
+  onPos(q.p[0],q.p[1],6,5.5,bearing(n.route.coords[q.i],n.route.coords[q.i+1]));
+}
+function setBanner(arrow,dist,text,warn){$('navArrow').textContent=arrow;$('navDist').textContent=dist;$('navText').textContent=text;$('navTop').classList.toggle('warn',!!warn);}
+const midSentence=s=>LANG==='en'?s.charAt(0).toLowerCase()+s.slice(1):s;
+
+function onPos(lat,lng,acc,speed,heading){
+  const n=S.nav; if(!n)return; const r=n.route, p=[lat,lng];
+  n.pos={lat,lng};
+  let pr=project(r,p,n.i-3,n.i+80);
+  const thr=Math.max(35,Math.min(acc||0,60)+20);
+  if(pr.d>thr){const g=project(r,p,0,r.coords.length-1); if(g.d<=thr&&g.along>=n.along-60)pr=g;}
+  const on=pr.d<=thr;
+  if(heading==null||isNaN(heading)){heading=on?bearing(r.coords[pr.i],r.coords[pr.i+1]):null;}
+  showMe(lat,lng,acc,heading);
+  if(n.follow)map.setView(p,Math.max(map.getZoom(),17),{animate:true});
+  $('nvSpd').textContent=speed!=null&&!isNaN(speed)?Math.round(speed*3.6):'–';
+  if(n.rerouting)return;
+  if(!on){
+    if((acc||0)>120)return; // קליטה גרועה – לא מסיקים מסקנות
+    n.off++; setBanner('!',fmtDist(pr.d),t('offRoute'),true);
+    if(n.off>=3&&Date.now()-n.lastReroute>(n.fails?15000:6000))reroute();
+    return;
+  }
+  n.off=0;n.i=pr.i;n.along=pr.along;
+  const rem=r.dist-n.along;
+  $('nvRem').textContent=fmtDist(rem);
+  const eta=new Date(Date.now()+1000*r.time*(rem/(r.dist||1)));$('nvEta').textContent=eta.getHours()+':'+String(eta.getMinutes()).padStart(2,'0');
+  if(rem<25){say(t('arrived'));toast(t('arrived')+'!',5000);stopNav(true);return;}
+  const h=r.hints.find(x=>r.cum[x.i]>n.along+4);
+  if(!h){setBanner('↑',fmtDist(rem),t('toDest'),false);return;}
+  const dh=r.cum[h.i]-n.along, txt=hintText(h);
+  setBanner(h.arrow,fmtDist(dh),txt,false);
+  if(dh<=230&&dh>90&&!h.far){h.far=true;say(t('inMeters',Math.round(dh/50)*50,midSentence(txt)));}
+  else if(dh<=45&&!h.near){h.near=true;h.far=true;say(txt);}
+}
+
+/* חישוב מסלול מחדש לאחר סטייה */
+async function reroute(){
+  const n=S.nav; if(!n||n.rerouting)return;
+  n.rerouting=true;n.lastReroute=Date.now(); setBanner('⟳','',t('recalc')+'…',true); say(t('recalc'));
+  const here=[n.pos.lat,n.pos.lng], old=n.route;
+  try{
+    let nr;
+    if(old.isTrack){
+      // חזרה אל המסלול המתוכנן: חיבור לנקודה הקרובה ביותר בהמשך המסלול, ואז המשך לאורכו
+      const tail=sliceRoute(old,Math.max(old.trackStart||0,n.i));
+      let j=0,bd=Infinity; for(let k=0;k<tail.coords.length&&tail.cum[k]<8000;k++){const d=hav(here,tail.coords[k])+tail.cum[k]*0.15;if(d<bd){bd=d;j=k;}}
+      j=Math.min(j,tail.coords.length-2);
+      const conn=await routeBetween([here,tail.coords[j].slice(0,2)],0); const rest=sliceRoute(tail,j); rest.isTrack=true;
+      nr=concatRoutes(conn,rest); nr.isTrack=true; nr.name=old.name;
+    }else{
+      const vias=(old.vias||[]).filter(v=>project(old,v,0,old.coords.length-1).along>n.along+40);
+      nr=await routeBetween([here,...vias,old.dest],0); nr.dest=old.dest; nr.vias=vias;
+    }
+    if(S.nav!==n)return;
+    n.route=nr;n.i=0;n.along=0;n.off=0;n.fails=0; S.routes=[nr];S.active=0; drawRoutes();
+    if(S.sim){S.sim.along=0;S.sim.hold=null;}
+    toast(t('updated',fmtDist(nr.dist)));
+  }catch(e){ if(S.nav!==n)return; n.fails++; toast(t('recalcFail')); }
+  finally{ if(S.nav===n)n.rerouting=false; }
+}
+$('btnStop').onclick=()=>stopNav();
+$('btnCenter').onclick=()=>{if(S.nav){S.nav.follow=true;if(S.nav.pos)map.setView([S.nav.pos.lat,S.nav.pos.lng],17);}};
+function toggleVoice(){S.voice=!S.voice;store.set({voice:S.voice});applyTheme();if(!S.voice)hush();}
+$('btnMute').onclick=toggleVoice;
+
+/* ---------- כפתורים ותפריטים ---------- */
+$('fabLocate').onclick=()=>{if(S.nav){$('btnCenter').onclick();return;}locateOnce(true).catch(()=>{});};
+$('fabTrails').onclick=showTrails;
+const togglePop=id=>{document.querySelectorAll('.pop').forEach(p=>p.classList.toggle('open',p.id===id&&!p.classList.contains('open')));};
+$('fabLayers').onclick=()=>togglePop('popLayers'); $('fabMenu').onclick=()=>togglePop('popMenu');
+$('popMenu').addEventListener('click',e=>{const b=e.target.closest('[data-menu]');if(!b)return;const m=b.dataset.menu;
+  if(m==='theme'){S.theme={auto:'light',light:'dark',dark:'auto'}[S.theme];store.set({theme:S.theme});applyTheme();return;}
+  if(m==='voice'){toggleVoice();return;}
+  if(m==='lang'){LANG=LANG==='he'?'en':'he';store.set({lang:LANG});applyLang();return;}
+  $('popMenu').classList.remove('open');
+  if(m==='gpxin')$('gpxFile').click(); else if(m==='gpxout')exportGPX(); else if(m==='sim')startNav(true);
+  else if(m==='about'){S.view='';openSheet(t('mAbout'),`<p class="small">${t('aboutIntro')}</p>
+    <dl class="kv"><dt>${t('aMaps')}</dt><dd>OpenStreetMap, CyclOSM, OpenTopoMap</dd><dt>${t('aRouting')}</dt><dd>BRouter (${t('backup')}: OSRM)</dd><dt>${t('aTrails')}</dt><dd>Waymarked Trails + OSM API</dd><dt>${t('aSearch')}</dt><dd>Photon (${t('backup')}: Nominatim)</dd></dl>
+    <p class="small muted">${t('aboutLegend')}</p>`);}
+});
+if('speechSynthesis' in window)speechSynthesis.getVoices();
+applyLang();
+/* קישור ישיר: ?from=lat,lng&to=lat,lng&lang=he|en */
+(function(){const q=new URLSearchParams(location.search), rd=k=>{const m=(q.get(k)||'').match(/^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/);return m?{lat:+m[1],lng:+m[2]}:null;};
+  const lg=q.get('lang'); if((lg==='he'||lg==='en')&&lg!==LANG){LANG=lg;applyLang();}
+  const f=rd('from'), d=rd('to'); if(f){S.from=f;$('inFrom').value=labelOf(f);labelPoint(f,'from');} if(d){setPoint('to',d);labelPoint(d,'to');}})();
+if(NAT())locateOnce(!saved.view).catch(()=>{});
+else if(navigator.permissions&&navigator.permissions.query)navigator.permissions.query({name:'geolocation'}).then(s=>{if(s.state==='granted')locateOnce(!saved.view).catch(()=>{});}).catch(()=>{});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "appId": "org.bikenavigator.app",
+  "appName": "Bike Navigator",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}
