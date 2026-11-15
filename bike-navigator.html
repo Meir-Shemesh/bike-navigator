@@ -381,6 +381,8 @@ he:{
   iconH:'סימון הרוכב במפה','ic.bike':'אופניים','ic.pedelec':'אופניים היברידיים (e-Bike)','ic.electric':'אופניים חשמליים','ic.arrow':'חץ','ic.dot':'נקודה',
   rideNote:'זמן הרכיבה מחושב לפי סוג האופניים והשיפועים, והוא הערכה בלבד.',maxGrade:'שיפוע עד {0}%',
   povBtn:'תצוגת רוכב / תצוגת מפה',povOn:'תצוגת רוכב: כיוון הרכיבה למעלה',povOff:'תצוגת מפה',simPov:'להקפצת המיקום עברו לתצוגת מפה (2D)',
+  ttsNoLang:'במכשיר לא מותקן קול בעברית, ולכן ההנחיות מושמעות באנגלית. להתקנת קול עברי: הגדרות המכשיר ← נגישות ← המרת טקסט לדיבור.',
+  ttsFail:'ההנחיות הקוליות אינן זמינות במכשיר זה',voiceTest:'הנחיות קוליות פעילות',
   pinA:'א',pinB:'ב'
 },
 en:{
@@ -497,6 +499,8 @@ en:{
   iconH:'Rider marker on the map','ic.bike':'Bicycle','ic.pedelec':'Hybrid e-Bike','ic.electric':'Electric bike','ic.arrow':'Arrow','ic.dot':'Dot',
   rideNote:'Riding time is calculated from the bike type and the gradients, and is an estimate only.',maxGrade:'Grade up to {0}%',
   povBtn:'Rider view / map view',povOn:'Rider view: riding direction points up',povOff:'Map view',simPov:'Switch to map view (2D) to move the position',
+  ttsNoLang:'This device has no voice installed for this language, so guidance may be silent. To install one: device Settings → Accessibility → Text-to-speech.',
+  ttsFail:'Voice guidance is not available on this device',voiceTest:'Voice guidance is on',
   pinA:'A',pinB:'B'
 }};
 let LANG='he';
@@ -1155,11 +1159,23 @@ $('fabPov').onclick=()=>{S.pov=!S.pov;store.set({pov:S.pov});applyPov();toast(t(
 window.addEventListener('resize',()=>{if(document.body.classList.contains('pov')){sizePov();map.invalidateSize({animate:false});}});
 
 /* ---------- ניווט ---------- */
-function say(txt){
-  if(!S.voice)return; const lang=LANG==='he'?'he-IL':'en-US', P=NAT();
-  if(P&&P.TextToSpeech){P.TextToSpeech.speak({text:txt,lang,rate:1,queueStrategy:0}).catch(()=>{});return;}
-  if(!('speechSynthesis' in window))return;
-  try{const u=new SpeechSynthesisUtterance(txt);u.lang=lang;const re=LANG==='he'?/^(he|iw)/i:/^en/i;const v=speechSynthesis.getVoices().find(v=>re.test(v.lang));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}
+/* שפת ההקראה: שפת הממשק, ואם במכשיר אין לה קול (נפוץ בעברית) – אנגלית. נבדק בתחילת ניווט ובהפעלת הקול, לא בעליית האפליקציה (מנוע ה-TTS עוד לא מוכן) */
+let ttsLang=null, ttsWarned=false;
+async function pickTtsLang(){
+  const P=NAT(), re=LANG==='he'?/^(he|iw)/i:/^en/i; let ok=true;
+  try{ if(P&&P.TextToSpeech)ok=!!(await P.TextToSpeech.isLanguageSupported({lang:LANG==='he'?'he-IL':'en-US'})).supported;
+    else if('speechSynthesis' in window){const v=speechSynthesis.getVoices(); if(v.length)ok=v.some(x=>re.test(x.lang));} }catch(e){}
+  ttsLang=ok?LANG:'en';
+  if(!ok&&S.voice&&!ttsWarned){ttsWarned=true;toast(t('ttsNoLang'),9000);}
+}
+function ttsFail(e){if(ttsWarned)return;ttsWarned=true;toast(t('ttsFail')+(e&&e.message?' ('+e.message+')':''),9000);}
+/* fn מחזירה את הטקסט; היא מורצת כש-LANG היא שפת ההקראה, כדי שהמשפט ינוסח בשפה שהמכשיר יודע להקריא */
+function say(fn){
+  if(!S.voice)return; const vl=ttsLang||LANG, ui=LANG; let txt; LANG=vl; try{txt=fn();}finally{LANG=ui;}
+  const lang=vl==='he'?'he-IL':'en-US', P=NAT();
+  if(P&&P.TextToSpeech){P.TextToSpeech.speak({text:txt,lang,rate:1,volume:1,queueStrategy:0}).catch(ttsFail);return;}
+  if(!('speechSynthesis' in window)){ttsFail();return;}
+  try{const u=new SpeechSynthesisUtterance(txt);u.lang=lang;const re=vl==='he'?/^(he|iw)/i:/^en/i;const v=speechSynthesis.getVoices().find(v=>re.test(v.lang));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){ttsFail(e);}
 }
 function hush(){const P=NAT();try{if(P&&P.TextToSpeech)P.TextToSpeech.stop().catch(()=>{});else speechSynthesis.cancel();}catch(e){}}
 let wake=null;
@@ -1178,7 +1194,7 @@ function startNav(sim){
   document.body.classList.add('nav'); document.querySelectorAll('.pop.open').forEach(p=>p.classList.remove('open')); map.closePopup(); drawRoutes(); drawMarkers(); keepAwake(true);
   if(r.coords.length>1)povTurn(bearing(r.coords[0],r.coords[1]));
   applyPov(); if(S.pov)map.setView(r.coords[0].slice(0,2),17,{animate:false});
-  setBanner(r.hints[0]?r.hints[0].arrow:'↑','',t('starting'),false); say(t('sayStart'));
+  setBanner(r.hints[0]?r.hints[0].arrow:'↑','',t('starting'),false); pickTtsLang().then(()=>say(()=>t('sayStart')));
   if(sim){S.sim={along:0,hold:null,timer:setInterval(simTick,700)};toast(t('simHint'),5000);}
   else S.nav.watch=navigator.geolocation.watchPosition(p=>onPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy,p.coords.speed,p.coords.heading),
     e=>{geoErr(e);if(e.code===1)stopNav();},{enableHighAccuracy:true,maximumAge:1000,timeout:20000});
@@ -1226,19 +1242,19 @@ function onPos(lat,lng,acc,speed,heading){
   const rem=r.dist-n.along;
   $('nvRem').textContent=fmtDist(rem);
   const eta=new Date(Date.now()+1000*r.time*(rem/(r.dist||1)));$('nvEta').textContent=eta.getHours()+':'+String(eta.getMinutes()).padStart(2,'0');
-  if(rem<25){say(t('arrived'));toast(t('arrived')+'!',5000);stopNav(true);return;}
+  if(rem<25){say(()=>t('arrived'));toast(t('arrived')+'!',5000);stopNav(true);return;}
   const h=r.hints.find(x=>r.cum[x.i]>n.along+4);
   if(!h){setBanner('↑',fmtDist(rem),t('toDest'),false);return;}
   const dh=r.cum[h.i]-n.along, txt=hintText(h);
   setBanner(h.arrow,fmtDist(dh),txt,false);
-  if(dh<=230&&dh>90&&!h.far){h.far=true;say(t('inMeters',Math.round(dh/50)*50,midSentence(txt)));}
-  else if(dh<=45&&!h.near){h.near=true;h.far=true;say(txt);}
+  if(dh<=230&&dh>90&&!h.far){h.far=true;say(()=>t('inMeters',Math.round(dh/50)*50,midSentence(hintText(h))));}
+  else if(dh<=45&&!h.near){h.near=true;h.far=true;say(()=>hintText(h));}
 }
 
 /* חישוב מסלול מחדש לאחר סטייה */
 async function reroute(){
   const n=S.nav; if(!n||n.rerouting)return;
-  n.rerouting=true;n.lastReroute=Date.now(); setBanner('⟳','',t('recalc')+'…',true); say(t('recalc'));
+  n.rerouting=true;n.lastReroute=Date.now(); setBanner('⟳','',t('recalc')+'…',true); say(()=>t('recalc'));
   const here=[n.pos.lat,n.pos.lng], old=n.route;
   try{
     let nr;
@@ -1262,7 +1278,8 @@ async function reroute(){
 }
 $('btnStop').onclick=()=>stopNav();
 $('btnCenter').onclick=()=>{if(S.nav){S.nav.follow=true;if(S.nav.pos)map.setView([S.nav.pos.lat,S.nav.pos.lng],17);}};
-function toggleVoice(){S.voice=!S.voice;store.set({voice:S.voice});applyTheme();if(!S.voice)hush();}
+function toggleVoice(){S.voice=!S.voice;store.set({voice:S.voice});applyTheme();
+  if(!S.voice)hush(); else{ttsWarned=false;pickTtsLang().then(()=>say(()=>t('voiceTest')));}} // בהפעלה: משפט בדיקה, כדי לשמוע מיד שהקול עובד
 $('btnMute').onclick=toggleVoice;
 
 /* ---------- אודות / תנאי שימוש / פרטיות / נגישות ---------- */
@@ -1289,7 +1306,7 @@ $('modalClose').onclick=closeModal;
 $('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 $('modalAccept').onclick=()=>{store.set({terms:TERMS_VER});consent=false;$('modal').classList.remove('open','consent');};
-function switchLang(){LANG=LANG==='he'?'en':'he';store.set({lang:LANG});applyLang();}
+function switchLang(){ttsLang=null;ttsWarned=false;LANG=LANG==='he'?'en':'he';store.set({lang:LANG});applyLang();}
 $('modalLang').onclick=switchLang; $('fabLang').onclick=switchLang;
 document.addEventListener('click',e=>{if(e.target.id==='credit'){e.preventDefault();openModal('about');}});
 
