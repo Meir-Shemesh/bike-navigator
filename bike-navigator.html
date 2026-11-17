@@ -109,6 +109,24 @@ button{cursor:pointer}
 .btn.danger{background:var(--danger);color:#fff}
 .btns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .btns .btn{flex:1;white-space:nowrap}
+/* route planning sheet */
+.stylebox{margin-bottom:8px}
+.lbl{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:5px}
+.chips.wrap{flex-wrap:wrap;overflow:visible;padding-top:0}
+.altrow{display:flex;gap:6px;overflow-x:auto;margin-bottom:8px;scrollbar-width:none}
+.altp{flex:none;border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:5px 10px;font-size:13px;color:var(--muted);white-space:nowrap}
+.altp b{color:var(--text);font-size:14.5px}
+.altp.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--text)}
+.rsum{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.rtime{font-size:28px;font-weight:800;color:var(--accent);line-height:1.1}
+.bar.slim{height:7px;margin:7px 0}
+.rtags{display:flex;flex-wrap:wrap;gap:4px 0}
+.btn.go{flex:2;border-radius:999px;font-size:16px}
+#sheet:not(.full) .more{display:none}
+.tbub{position:absolute;transform:translate(-50%,-135%);white-space:nowrap;background:var(--accent);color:var(--accent-text);font-weight:700;font-size:13px;border-radius:9px;padding:3px 9px;box-shadow:var(--shadow);border:2px solid var(--casing);cursor:pointer}
+.tbub.alt{background:var(--surface);color:var(--text);border-color:var(--border)}
+body.plan #chips{display:none}
+@media (max-width:900px){body.plan #fabs,body.plan .pop{top:calc(112px + env(safe-area-inset-top))}}
 h3.sec{font-size:13px;color:var(--muted);margin:12px 0 5px;font-weight:600}
 .bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--surface2)}
 .bar i{display:block;height:100%}
@@ -300,7 +318,7 @@ body.pov #povAttr a{color:var(--muted)}
 const I18N={
 he:{
   appTitle:'ניווט אופניים',
-  'cat.bike':'שביל אופניים','cat.lane':'נתיב אופניים בכביש','cat.quiet':'רחוב שקט','cat.medium':'רחוב מאסף','cat.busy':'כביש סואן','cat.trail':'שביל שטח','cat.foot':'מדרכה / הולכי רגל','cat.other':'אחר',
+  'cat.bike':'שביל אופניים','cat.lane':'נתיב אופניים בכביש','cat.quiet':'רחוב שקט','cat.medium':'רחוב ראשי','cat.busy':'כביש סואן','cat.trail':'שביל שטח','cat.foot':'מדרכה / הולכי רגל','cat.other':'אחר',
   'sf.paved':'סלול','sf.gravel':'כורכר / חצץ מהודק','sf.dirt':'עפר / לא סלול','sf.unk':'לא מתויג',
   'p.trekking':'מאוזן (מומלץ)','p.safety':'הכי בטוח','p.fastbike':'מהיר – כביש','p.gravel':'דרכי עפר (גראבל)','p.mtb':'שטח (MTB)','p.shortest':'הקצר ביותר',
   'h.straight':'המשיכו ישר','h.left':'פנו שמאלה','h.slightLeft':'פנו קלות שמאלה','h.sharpLeft':'פנו חדות שמאלה','h.right':'פנו ימינה','h.slightRight':'פנו קלות ימינה','h.sharpRight':'פנו חדות ימינה',
@@ -339,7 +357,7 @@ he:{
   pickFirst:'בחרו תחילה מסלול',starting:'מתחילים…',sayStart:'מתחילים בניווט',simHint:'סימולציה: הקישו על המפה כדי לדמות סטייה מהמסלול',simDev:'סימולציה: סטייה מהמסלול',navEnded:'הניווט הסתיים',
   offRoute:'סטיתם מהמסלול',arrived:'הגעתם ליעד',toDest:'המשיכו עד היעד',inMeters:'בעוד {0} מטר, {1}',recalc:'מחשב מסלול מחדש',updated:'המסלול עודכן · {0}',recalcFail:'לא ניתן לחשב מסלול מחדש כעת – מנסה שוב בקרוב',
   aboutIntro:'האפליקציה נשענת כולה על שירותים חופשיים וקוד פתוח:',aMaps:'מפות',aRouting:'חישוב מסלול',aTrails:'מסלולים מסומנים',aSearch:'חיפוש כתובות',backup:'גיבוי',
-  aboutLegend:'צבעי המסלול: ירוק – שביל אופניים; טורקיז – נתיב אופניים; כחול – רחוב שקט; צהוב – רחוב מאסף; אדום – כביש סואן; חום – שביל שטח. הנתונים מבוססים על מיפוי מתנדבים; רכבו בזהירות והפעילו שיקול דעת.',
+  aboutLegend:'צבעי המסלול: ירוק – שביל אופניים; טורקיז – נתיב אופניים; כחול – רחוב שקט; צהוב – רחוב ראשי; אדום – כביש סואן; חום – שביל שטח. הנתונים מבוססים על מיפוי מתנדבים; רכבו בזהירות והפעילו שיקול דעת.',
   langSwitch:'Switch to English',close:'סגירה',accept:'קראתי ואני מסכים/ה לתנאי השימוש',welcome:'ברוכים הבאים',
   'tab.about':'אודות','tab.terms':'תנאי שימוש','tab.privacy':'פרטיות','tab.a11y':'נגישות',
   owner:'מאיר שמש – יעוץ וניהול טכנולוגיות',ownerShort:'מאיר שמש',rights:'כל הזכויות שמורות',
@@ -414,6 +432,7 @@ he:{
   povBtn:'תצוגת רוכב / תצוגת מפה',povOn:'תצוגת רוכב: כיוון הרכיבה למעלה',povOff:'תצוגת מפה',simPov:'להקפצת המיקום עברו לתצוגת מפה (2D)',
   ttsNoLang:'במכשיר לא מותקן קול בעברית, ולכן ההנחיות מושמעות באנגלית. להתקנת קול עברי: הגדרות המכשיר ← נגישות ← המרת טקסט לדיבור.',
   ttsFail:'ההנחיות הקוליות אינן זמינות במכשיר זה',voiceTest:'הנחיות קוליות: {0}','vm.on':'מלאות','vm.alerts':'התרעות בלבד','vm.off':'כבויות',voiceBtn:'הנחיות קוליות',
+  styleH:'סוג המסלול',goBtn:'יוצאים',moreBtn:'פרטים ושלבים',lessBtn:'פחות פרטים',arrAt:'הגעה {0}',
   then:'ואז',nvOver:'מבט על המסלול',nvStopQ:'לסיים את הניווט?',nvContinue:'ממשיכים',
   warnBusy:'בעוד {0}: כביש סואן',warnSteep:'בעוד {0}: עלייה תלולה',sayBusy:'בעוד {0} מטרים, כביש סואן. רכבו בזהירות',saySteep:'בעוד {0} מטרים, עלייה תלולה',
   arrivedT:'הגעתם ליעד',sumDist:'מרחק',sumTime:'זמן רכיבה',sumAvg:'מהירות ממוצעת',
@@ -535,6 +554,7 @@ en:{
   povBtn:'Rider view / map view',povOn:'Rider view: riding direction points up',povOff:'Map view',simPov:'Switch to map view (2D) to move the position',
   ttsNoLang:'This device has no voice installed for this language, so guidance may be silent. To install one: device Settings → Accessibility → Text-to-speech.',
   ttsFail:'Voice guidance is not available on this device',voiceTest:'Voice guidance: {0}','vm.on':'Full','vm.alerts':'Alerts only','vm.off':'Off',voiceBtn:'Voice guidance',
+  styleH:'Route type',goBtn:'Go',moreBtn:'Details & steps',lessBtn:'Less detail',arrAt:'arrive {0}',
   then:'Then',nvOver:'Route overview',nvStopQ:'End navigation?',nvContinue:'Keep riding',
   warnBusy:'In {0}: busy road',warnSteep:'In {0}: steep climb',sayBusy:'In {0} meters, busy road. Ride carefully',saySteep:'In {0} meters, steep climb',
   arrivedT:'You have arrived',sumDist:'Distance',sumTime:'Riding time',sumAvg:'Average speed',
@@ -785,7 +805,7 @@ const store={get(){try{return JSON.parse(localStorage.getItem('bikenav.v1'))||{}
 const saved=store.get();
 LANG=saved.lang==='he'||saved.lang==='en'?saved.lang:(/^(he|iw)/i.test(navigator.language||'')?'he':'en');
 const S={from:null,to:null,vias:[],profile:saved.profile||'trekking',routes:[],active:0,view:'',tok:0,nav:null,sim:null,
-  voice:saved.voice===false||saved.voice==='off'?'off':saved.voice==='alerts'?'alerts':'on',theme:saved.theme||'auto',me:null,trails:[],trailMeta:null,picked:false,
+  voice:saved.voice===false||saved.voice==='off'?'off':saved.voice==='alerts'?'alerts':'on',theme:saved.theme||'auto',me:null,trails:[],trailMeta:null,picked:false,full:false,
   bike:BIKES[saved.bike]?saved.bike:'mech',hill:HILLS.includes(saved.hill)?saved.hill:'mid',icon:saved.icon||null,pov:saved.pov!==false,hd:null};
 BIKE=S.bike;
 /* סימון הרוכב: אייקון לפי סוג האופניים, אלא אם נבחר חץ/נקודה */
@@ -805,6 +825,9 @@ const LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACpCAIAAAAEDCBaAA
 /* מצבי קול: מלא / התרעות בלבד (סטייה, כביש סואן, עלייה תלולה, הגעה) / כבוי */
 const VOICE_ICO={on:'<path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/>',alerts:'<path d="M18.5 7v6M18.5 16.4v.4"/>',off:'<path d="M16 9l5 6M21 9l-5 6"/>'};
 const buzz=p=>{if(S.voice!=='off'&&navigator.vibrate)try{navigator.vibrate(p);}catch(e){}};
+/* סוג המסלול: סגנונות הרכיבה + כפתור הגדרות הרכיבה. מוצג בכרטיס החיפוש, ובזמן תכנון מסלול – בראש הגיליון התחתון */
+const chipsHTML=()=>`<button class="chip chipRide" title="${t('rideBtn')}" aria-label="${t('rideBtn')}">⚙ ${t('bks.'+S.bike)} · ${t('hls.'+S.hill)}</button>`+PROFILES.map(p=>`<button class="chip ${p.id===S.profile?'on':''}" data-p="${p.id}">${t('p.'+p.id)}</button>`).join('');
+const stylesHTML=()=>`<div class="stylebox"><div class="lbl">${t('styleH')}</div><div class="chips wrap">${chipsHTML()}</div></div>`;
 const labelOf=p=>p.label||t(p.nameKey||'mapPoint');
 
 function toast(msg,ms){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),ms||3200);}
@@ -826,13 +849,13 @@ function applyLang(){
   document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));
   document.querySelectorAll('[data-i18n-ph]').forEach(e=>e.placeholder=t(e.dataset.i18nPh));
   document.querySelectorAll('[data-i18n-title]').forEach(e=>{e.title=t(e.dataset.i18nTitle);e.setAttribute('aria-label',e.title);});
-  $('chips').innerHTML=`<button class="chip" id="chipRide" title="${t('rideBtn')}" aria-label="${t('rideBtn')}">⚙ ${t('bks.'+S.bike)} · ${t('hls.'+S.hill)}</button>`+PROFILES.map(p=>`<button class="chip ${p.id===S.profile?'on':''}" data-p="${p.id}">${t('p.'+p.id)}</button>`).join('');
+  $('chips').innerHTML=chipsHTML();
   $('baseList').innerHTML=Object.keys(BASES).map(k=>`<label><input type="radio" name="base" value="${k}" ${k===curBase?'checked':''}>${t('b.'+k)}</label>`).join('');
   $('overList').innerHTML=Object.keys(OVERS).map(k=>`<label><input type="checkbox" value="${k}" ${overOn.has(k)?'checked':''}>${t('o.'+k)}</label>`).join('');
   if(S.from)$('inFrom').value=labelOf(S.from); if(S.to)$('inTo').value=labelOf(S.to);
   $('fabLangTxt').textContent=LANG==='he'?'EN':'עב'; renderRide();
   map.attributionControl.setPrefix('<a href="#" id="credit">© '+t('ownerShort')+'</a>');
-  $('sugg').hidden=true; map.closePopup(); drawMarkers(); applyTheme(); renderModal();
+  $('sugg').hidden=true; map.closePopup(); drawMarkers(); drawRoutes(); applyTheme(); renderModal();
   if(S.view)render(); else $('sheet').classList.remove('open');
 }
 
@@ -862,13 +885,16 @@ const pin=(cls,txt)=>L.divIcon({className:'',html:`<div class="pin ${cls}"><span
 function drawRoutes(){
   routeLayer.clearLayers();
   S.routes.forEach((r,k)=>{ if(k===S.active)return;
-    L.polyline(r.coords,{className:'seg-alt',weight:6,opacity:.75}).on('click',e=>{L.DomEvent.stop(e);selectRoute(k);}).addTo(routeLayer);});
+    L.polyline(r.coords,{className:'seg-alt',weight:5,opacity:.75}).on('click',e=>{L.DomEvent.stop(e);selectRoute(k);}).addTo(routeLayer);});
   const r=S.routes[S.active]; if(!r)return;
-  L.polyline(r.coords,{className:'casing',weight:10,opacity:.9,interactive:false}).addTo(routeLayer);
+  L.polyline(r.coords,{className:'casing',weight:13,opacity:.95,interactive:false}).addTo(routeLayer);
   if(r.segs&&r.segs.length){
-    let run=null; const flush=()=>{if(run)L.polyline(r.coords.slice(run.a,run.b+1),{className:'seg-'+run.cat,weight:6,opacity:1,interactive:false}).addTo(routeLayer);};
+    let run=null; const flush=()=>{if(run)L.polyline(r.coords.slice(run.a,run.b+1),{className:'seg-'+run.cat,weight:8,opacity:1,interactive:false}).addTo(routeLayer);};
     r.segs.forEach(s=>{if(run&&run.cat===s.cat&&run.b===s.a)run.b=s.b;else{flush();run={a:s.a,b:s.b,cat:s.cat};}}); flush();
-  }else L.polyline(r.coords,{className:'seg-quiet',weight:6,interactive:false}).addTo(routeLayer);
+  }else L.polyline(r.coords,{className:'seg-quiet',weight:8,interactive:false}).addTo(routeLayer);
+  // בועות זמן על המפה בשלב בחירת המסלול; הקשה בוחרת חלופה
+  if(S.view==='routes'&&!S.nav)S.routes.forEach((x,k)=>{const q=pointAt(x,x.dist*[0.5,0.3,0.7][k%3]).p;
+    L.marker(q,{icon:L.divIcon({className:'',html:`<div dir="${LANG==='he'?'rtl':'ltr'}" class="tbub ${k===S.active?'':'alt'}">${fmtTime(x.time)}</div>`,iconSize:[0,0]}),zIndexOffset:k===S.active?600:500}).on('click',()=>selectRoute(k)).addTo(routeLayer);});
 }
 function drawMarkers(){
   markLayer.clearLayers();
@@ -906,7 +932,7 @@ function renderRide(){
   $('popRide').innerHTML=`<h4>${t('bikeH')}</h4>${rb('bike',Object.keys(BIKES),S.bike,'bk.')}<h4>${t('hillH')}</h4>${rb('hill',HILLS,S.hill,'hl.')}
     <h4>${t('iconH')}</h4><div class="icopick">${Object.keys(ICONS).map(k=>`<button data-icon="${k}" class="${k===meKind()?'on':''}" title="${t('ic.'+k)}" aria-label="${t('ic.'+k)}"><svg viewBox="0 0 24 24">${ICONS[k]}</svg></button>`).join('')}</div>
     <p class="muted small">${t('rideNote')}</p>`;
-  const c=$('chipRide'); if(c)c.textContent='⚙ '+t('bks.'+S.bike)+' · '+t('hls.'+S.hill);
+  document.querySelectorAll('.chipRide').forEach(c=>{c.textContent='⚙ '+t('bks.'+S.bike)+' · '+t('hls.'+S.hill);});
   refreshMeIcon();
 }
 function rideChanged(){
@@ -995,10 +1021,11 @@ map.on('contextmenu',e=>{if(!S.nav)mapMenu(e.latlng);});
 map.on('dragstart',()=>{if(S.nav){setFollow(false);clearTimeout(overT);}});
 
 /* ---------- חישוב מסלול ---------- */
-$('chips').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;
-  if(b.id==='chipRide'){$('sugg').hidden=true;togglePop('popRide');return;}
+function chipClick(e){const b=e.target.closest('.chip');if(!b||(!b.dataset.p&&!b.classList.contains('chipRide')))return false;
+  if(!b.dataset.p){$('sugg').hidden=true;togglePop('popRide');return true;}
   S.profile=b.dataset.p;store.set({profile:S.profile});
-  document.querySelectorAll('#chips .chip[data-p]').forEach(c=>c.classList.toggle('on',c===b));if(S.to)computeRoutes();};
+  document.querySelectorAll('.chip[data-p]').forEach(c=>c.classList.toggle('on',c.dataset.p===S.profile));if(S.to)computeRoutes();return true;}
+$('chips').onclick=chipClick;
 /* העדפת שיפועים ל-BRouter: עלות עלייה לפי סוג האופניים ומידת התלילות שנבחרה */
 function hillParams(){
   if(S.hill==='steep')return'&profile:uphillcost=0&profile:downhillcost=0';
@@ -1028,7 +1055,7 @@ async function computeRoutes(){
     else{try{const me=await locateOnce(false);S.from={lat:me.lat,lng:me.lng,nameKey:'myLoc',isMe:true};}catch(e){toast(t('needFrom'));return;}}
     $('inFrom').value=labelOf(S.from); }
   const tok=++S.tok, pts=[S.from,...S.vias,S.to].map(p=>[p.lat,p.lng]);
-  S.trailMeta=null; S.view=''; openSheet(t('calcT'),`<p><i class="spin"></i>${t('calcB')}</p>`);
+  S.trailMeta=null; S.view=''; openSheet(t('calcT'),stylesHTML()+`<p><i class="spin"></i>${t('calcB')}</p>`);
   try{
     const r0=await routeBetween(pts,0); if(tok!==S.tok)return;
     r0.dest=pts[pts.length-1]; r0.vias=pts.slice(1,-1);
@@ -1042,16 +1069,20 @@ async function computeRoutes(){
     rankRoutes();
   }catch(e){ if(tok!==S.tok)return;
     const body=(e.body||'')+'';
-    openSheet(t('noRouteT'),`<div class="note">${t(/not mapped|position/.test(body)?'errFar':'errNet')}</div><div class="btns"><button class="btn" data-act="retry">${t('retry')}</button></div>`);
+    openSheet(t('noRouteT'),stylesHTML()+`<div class="note">${t(/not mapped|position/.test(body)?'errFar':'errNet')}</div><div class="btns"><button class="btn" data-act="retry">${t('retry')}</button></div>`);
   }
 }
 function selectRoute(k){S.picked=true;S.active=k;drawRoutes();render();}
 
 /* ---------- גיליון תוצאות ---------- */
-function openSheet(title,html){$('sheetTitle').textContent=title;$('sheetBody').innerHTML=html;$('sheet').classList.add('open');$('sheet').classList.remove('collapsed');$('sheetToggle').textContent='▾';}
-function closeSheet(){$('sheet').classList.remove('open');S.view='';}
+/* body.plan = מתכננים מסלול ליעד: סוג המסלול מוצג בראש הגיליון במקום בכרטיס החיפוש */
+const syncPlan=()=>document.body.classList.toggle('plan',!!S.to&&S.view!=='trail'&&S.view!=='trails');
+function openSheet(title,html){$('sheetTitle').textContent=title;$('sheetBody').innerHTML=html;$('sheet').classList.add('open');$('sheet').classList.remove('collapsed','full');$('sheetToggle').textContent='▾';syncPlan();}
+function closeSheet(){$('sheet').classList.remove('open');S.view='';syncPlan();}
+/* בבחירת מסלול הגיליון נפתח מקוצר; S.full מרחיב אותו לפירוט המלא */
+function setFull(v){S.full=v;if(S.view==='routes')render();}
 new ResizeObserver(()=>document.body.style.setProperty('--sheetH',$('sheet').offsetHeight+'px')).observe($('sheet')); // לפריסת הכפתורים הצפים
-$('sheetHead').onclick=()=>{const c=$('sheet').classList.toggle('collapsed');$('sheetToggle').textContent=c?'▴':'▾';};
+$('sheetHead').onclick=()=>{if(S.view==='routes'){setFull(!S.full);return;}const c=$('sheet').classList.toggle('collapsed');$('sheetToggle').textContent=c?'▴':'▾';};
 
 function barHTML(m,total,keys,prefix,cssPrefix){
   keys=keys.filter(k=>m[k]>total*0.004); if(!keys.length)return'';
@@ -1080,13 +1111,18 @@ function summaryLine(r){return`<b>${fmtTime(r.time)}</b> · ${fmtDist(r.dist)}${
 const gradeTag=r=>r.maxGrade?`<span class="tag ${r.maxGrade>=BIKES[S.bike].steep?'bad':''}">${t('maxGrade',r.maxGrade)}</span>`:'';
 function render(){
   if(S.view==='routes'){
-    const r=S.routes[S.active]; let h=''; const fast=S.routes.reduce((m,x)=>x.time<m.time?x:m,S.routes[0]);
-    h+=S.routes.map((x,k)=>{const bp=pct(x,['bike','lane']),bz=pct(x,['busy']);
-      return`<button class="alt ${k===S.active?'on':''}" data-route="${k}">${summaryLine(x)}
-      <div class="sub">${k===0?`<span class="tag good">${t('rec')}</span>`:`<span class="tag">${x===fast?t('fastest'):t('altN',k)}</span>`}${x.fallback?'':`<span class="tag ${bp>=40?'good':''}">${t('bikePct',bp)}</span><span class="tag ${bz>=8?'bad':''}">${t('busyPct',bz)}</span>`}${gradeTag(x)}</div></button>`;}).join('');
-    h+=`<div class="btns"><button class="btn" data-act="go">${t('start')}</button><button class="btn sec" data-act="gpx">${t('gpxExp')}</button></div>`+detailHTML(r);
-    h+=`<p class="muted small">${t('tip')}</p>`;
+    const r=S.routes[S.active], fast=S.routes.reduce((m,x)=>x.time<m.time?x:m,S.routes[0]), arr=new Date(Date.now()+1000*r.time);
+    const bp=pct(r,['bike','lane']), bz=pct(r,['busy']);
+    let h=stylesHTML();
+    if(S.routes.length>1)h+=`<div class="altrow">${S.routes.map((x,k)=>`<button class="altp ${k===S.active?'on':''}" data-route="${k}"><b>${fmtTime(x.time)}</b> ${k===0?t('rec'):x===fast?t('fastest'):t('altN',k)}</button>`).join('')}</div>`;
+    h+=`<div class="rsum"><b class="rtime">${fmtTime(r.time)}</b><span class="muted">${fmtDist(r.dist)} · ${t('arrAt',arr.getHours()+':'+String(arr.getMinutes()).padStart(2,'0'))}${r.ascent!=null?' · ↗ '+r.ascent+' '+t('u.m'):''}</span></div>`;
+    if(!r.fallback&&r.dist){const ks=CATS.filter(k=>r.catM[k]>r.dist*0.004);
+      if(ks.length)h+=`<div class="bar slim">${ks.map(k=>`<i style="width:${(100*r.catM[k]/r.dist).toFixed(1)}%;background:var(--c-${k})"></i>`).join('')}</div>`;
+      h+=`<div class="rtags"><span class="tag ${bp>=40?'good':''}">${t('bikePct',bp)}</span><span class="tag ${bz>=8?'bad':''}">${t('busyPct',bz)}</span>${gradeTag(r)}</div>`;}
+    h+=`<div class="btns"><button class="btn go" data-act="go">▲ ${t('goBtn')}</button><button class="btn sec" data-act="more">${t(S.full?'lessBtn':'moreBtn')}</button></div>`;
+    h+=`<div class="more">${detailHTML(r)}<div class="btns"><button class="btn sec" data-act="gpx">${t('gpxExp')}</button></div><p class="muted small">${t('tip')}</p></div>`;
     openSheetKeep(t('routeTitle',fmtDist(r.dist)),h);
+    $('sheet').classList.remove('collapsed'); $('sheet').classList.toggle('full',!!S.full); $('sheetToggle').textContent=S.full?'▾':'▴';
   }else if(S.view==='trail'){
     const r=S.routes[0], m=trailKV(S.trailMeta||{},r); let h='';
     h+=`<p style="margin:2px 0 6px">${summaryLine(r)} <span class="muted small">${t('estTime')}</span> ${gradeTag(r)}</p>`;
@@ -1107,9 +1143,11 @@ function render(){
 function openSheetKeep(title,html){const col=$('sheet').classList.contains('collapsed')&&$('sheet').classList.contains('open');const sc=$('sheetBody').scrollTop;openSheet(title,html);if(col){$('sheet').classList.add('collapsed');$('sheetToggle').textContent='▴';}$('sheetBody').scrollTop=sc;}
 
 $('sheetBody').addEventListener('click',e=>{
+  if(chipClick(e))return;
   const rt=e.target.closest('[data-route]'); if(rt){selectRoute(+rt.dataset.route);return;}
   const tr=e.target.closest('[data-trail]'); if(tr){loadTrail(S.trails[+tr.dataset.trail]);return;}
   const b=e.target.closest('[data-act]'); if(!b)return; const a=b.dataset.act;
+  if(a==='more'){setFull(!S.full);return;}
   if(a==='go')startNav(false); else if(a==='gpx')exportGPX(); else if(a==='retry')computeRoutes();
   else if(a==='backlist'){S.view='trails';S.routes=[];drawRoutes();render();}
   else if(a==='closesheet')closeSheet();
@@ -1257,7 +1295,7 @@ function stopNav(silent){
   if(S.sim){clearInterval(S.sim.timer);S.sim=null;}
   S.nav=null; clearTimeout(overT); clearTimeout(stopT); document.body.classList.remove('nav','free'); applyPov(); $('navTop').classList.remove('warn'); keepAwake(false);
   if(!silent)hush();
-  drawMarkers(); if(S.view)render(); if(!silent)toast(t('navEnded'));
+  drawMarkers(); drawRoutes(); if(S.view)render(); if(!silent)toast(t('navEnded'));
 }
 function simTick(){
   const n=S.nav, s=S.sim; if(!n||!s)return;
