@@ -15,6 +15,7 @@
 | רשימת מסלולים מסומנים | `{cycling,mtb}.waymarkedtrails.org/api/v1/list/{by_area,search}` + `details/relation/ID` | bbox ב-EPSG:3857. נקודות הקצה של geometry/elevation מחזירות 404 – לא להשתמש |
 | גאומטריה + תגיות של מסלול | `api.openstreetmap.org/api/0.6/relation/ID/full.json` | מכאן surface / mtb:scale / smoothness לכל way |
 | חיפוש כתובות | Photon (`photon.komoot.io`), גיבוי Nominatim ב-Enter | Photon גם ל-reverse |
+| שמות רחובות בהנחיות | Nominatim `reverse?zoom=17` על נקודה ~30 מ׳ אחרי כל פנייה (`fetchNames()`) | BRouter אינו מחזיר שמות. בקשה אחת לשנייה לכל היותר (מדיניות Nominatim), רק בזמן ניווט, עד 40 פניות. Photon `layer=street` נבדק ונפסל – מחזיר רחוב סמוך במקום הרחוב שרוכבים בו |
 | אריחים | CyclOSM (ברירת מחדל), OSM, OpenTopoMap; שכבות Waymarked Trails | |
 
 Overpass **לא** בשימוש (שרתים ציבוריים לא יציבים/חוסמים). אין API חופשי לגילוי מסלולים ב-Komoot/Strava/Wikiloc – הפתרון הוא ייבוא GPX.
@@ -56,10 +57,14 @@ Overpass **לא** בשימוש (שרתים ציבוריים לא יציבים/ח
 - `#navTop`: כרזת הפנייה + `#navThen` ("ואז", רק כשהפנייה שאחרי הבאה במרחק ≤200 מ׳ ממנה).
 - `#navBottom`: ✕ (`#btnStop` פותח `#navConfirm`; רק "סיום" שם עוצר), זמן שנותר + מרחק · שעת הגעה, `#btnOver` (מבט על; `overview()` מכבה זמנית את תצוגת הרוכב דרך `S.nav.over` וחוזר לבד אחרי 10 שנ׳).
 - `#navFloat` (צמוד מעל הסרגל): `#navWay` – סוג הדרך הנוכחי; `#navWarn` – התרעה מראש (`updateWay()`: כביש סואן עד 400 מ׳, עלייה תלולה עד 300 מ׳ לפי `steepRuns()` וסף `BIKES[..].steep`); בועת מהירות; `#btnCenter` מוצג רק כש-`body.free` (`setFollow(false)` אחרי גרירה).
+- התקרבות אוטומטית (`autoZoom()`): 18 עד 150 מ׳ מפנייה, 17 מ-300 מ׳, 16 מ-1200 מ׳; בין הספים נשארים ברמה הנוכחית. `markTurn()` מסמן את צומת הפנייה הבאה ב-`turnLayer`.
+- `h.name` (שם הרחוב אחרי הפנייה) נוסף ע"י `fetchNames()` ומוצג דרך `hintText()` (`ontoFmt`; בעברית "ל"+שם). `copyHint` מעביר אותו הלאה.
+- מפה כהה: `body.night` מפעיל filter על `.leaflet-tile-pane` בלבד. `isDarkNow()`: לפי בחירת ערכת הצבעים; ב"אוטומטי" – לפי המכשיר, ובניווט גם לפי גובה השמש (`sunAlt()` ב-CORE, < ‎-3°), נבדק כל דקה.
 - `S.voice` הוא `on` / `alerts` / `off` (לא בוליאני). `say(fn, true)` = התרעה, נשמעת גם במצב alerts. `buzz()` רוטט בכל מצב חוץ מ-off.
 - **בחירת סוג המסלול אינה מוצגת בזמן ניווט, אך חייבת להישאר בולטת בשלב התכנון** (דרישת המשתמש – זה הייחוד של האפליקציה).
 
 ## הנחיות קוליות
+- בזמן ניסוח משפט להקראה `SPEAKING=true`; אם שפת ההקראה אנגלית, `hintText` משמיט שם רחוב בעברית (רק בקול, לא במסך).
 - `say(fn)` מקבל **פונקציה** שמחזירה טקסט, לא מחרוזת: היא מורצת כש-`LANG` מוחלף זמנית לשפת ההקראה (`ttsLang`), כך שאם במכשיר אין קול בעברית המשפט מנוסח ומוקרא באנגלית.
 - `pickTtsLang()` בודק תמיכה בשפה (`isLanguageSupported` בתוסף / `getVoices` בדפדפן) בתחילת ניווט ובהפעלת הקול – לא בעליית האפליקציה, כי מנוע ה-TTS עוד לא מוכן. כשלים מוצגים פעם אחת ב-toast (`ttsFail`), לא נבלעים.
 

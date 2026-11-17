@@ -125,6 +125,9 @@ body.plan #chips{display:none}
 body:not(.od) #rowFrom,body:not(.od) #btnSwap{display:none}
 .ci{width:14px;height:14px;vertical-align:-2px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-inline-end:4px}
 .pin.p{background:var(--me)}
+/* night map: tiles are inverted and hue-rotated back, so roads stay recognisable; route lines and markers are in other panes and keep their colours */
+body.night .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.85)}
+path.turnpt{stroke:var(--casing);fill:var(--accent);fill-opacity:.95}
 h3.sec{font-size:13px;color:var(--muted);margin:12px 0 5px;font-weight:600}
 .bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--surface2)}
 .bar i{display:block;height:100%}
@@ -318,14 +321,14 @@ he:{
   'sf.paved':'סלול','sf.gravel':'כורכר / חצץ מהודק','sf.dirt':'עפר / לא סלול','sf.unk':'לא מתויג',
   'p.trekking':'מאוזן (מומלץ)','p.safety':'הכי בטוח','p.fastbike':'מהיר – כביש','p.gravel':'דרכי עפר (גראבל)','p.mtb':'שטח (MTB)','p.shortest':'הקצר ביותר',
   'h.straight':'המשיכו ישר','h.left':'פנו שמאלה','h.slightLeft':'פנו קלות שמאלה','h.sharpLeft':'פנו חדות שמאלה','h.right':'פנו ימינה','h.slightRight':'פנו קלות ימינה','h.sharpRight':'פנו חדות ימינה',
-  'h.keepLeft':'היצמדו לשמאל','h.keepRight':'היצמדו לימין','h.uturn':'בצעו פניית פרסה','h.roundabout':'בכיכר, צאו ביציאה {0}',
+  'h.keepLeft':'היצמדו לשמאל','h.keepRight':'היצמדו לימין','h.uturn':'בצעו פניית פרסה','h.roundabout':'בכיכר, צאו ביציאה {0}',ontoFmt:'{0} {1}',
   ord:['','הראשונה','השנייה','השלישית','הרביעית','החמישית','השישית','השביעית'],
   'u.m':'מ׳','u.km':'ק״מ','u.min':'דק׳','u.h':'שע׳',
   phFrom:'מוצא (ברירת מחדל: המיקום שלי)',phTo:'לאן רוכבים?',clear:'ניקוי',swap:'החלפת מוצא ויעד',myLoc:'המיקום שלי',mapPoint:'נקודה במפה',
   trailsBtn:'מסלולי אופניים באזור',layers:'שכבות מפה',menu:'תפריט',baseH:'מפת בסיס',overH:'שכבות מסלולים מסומנים',
   'b.cyclosm':'מפת אופניים (CyclOSM)','b.osm':'מפה רגילה (OSM)','b.topo':'טופוגרפית (OpenTopoMap)','o.cycling':'מסלולי אופניים מסומנים','o.mtb':'מסלולי שטח (MTB) מסומנים',
   mLang:'שפה:',langName:'עברית',mGpxIn:'ייבוא מסלול מקובץ GPX',mGpxOut:'ייצוא המסלול הנוכחי ל-GPX',mSim:'סימולציית רכיבה (לבדיקה)',mVoice:'הנחיות קוליות:',on:'פעילות',off:'כבויות',
-  mTheme:'ערכת צבעים:','th.auto':'אוטומטי','th.light':'בהיר','th.dark':'כהה',mAbout:'אודות, תנאי שימוש ופרטיות',
+  mTheme:'ערכת צבעים:','th.auto':'אוטומטי (כהה בלילה)','th.light':'בהיר','th.dark':'כהה',mAbout:'אודות, תנאי שימוש ופרטיות',
   nvRem:'נותרו',nvEta:'שעת הגעה',nvKmh:'קמ״ש',nvStop:'סיום ניווט',nvCenter:'מרכוז',
   geoDenied:'אין הרשאת מיקום. יש לאשר לאפליקציה גישה למיקום.',geoFail:'לא ניתן לקבל מיקום. ודאו שה-GPS פעיל.',
   noResults:'לא נמצאו תוצאות',place:'מקום',coords:'קואורדינטות',noDest:'אין יעד להחלפה',
@@ -394,7 +397,7 @@ he:{
 <p>כדי לפעול, האפליקציה פונה ישירות מהמכשיר שלכם לשירותים חיצוניים:</p>
 <ul>
 <li>חישוב מסלול (BRouter, OSRM): נקודות המוצא, היעד והביניים; בעת חישוב מסלול מחדש – גם מיקומכם הנוכחי.</li>
-<li>חיפוש כתובות (Photon, Nominatim): טקסט החיפוש, מרכז המפה המוצגת, וקואורדינטות של נקודה שבחרתם על המפה.</li>
+<li>חיפוש כתובות (Photon, Nominatim): טקסט החיפוש, מרכז המפה המוצגת, וקואורדינטות של נקודה שבחרתם על המפה. בזמן ניווט – גם נקודות לאורך המסלול, כדי להציג את שמות הרחובות בהנחיות (Nominatim).</li>
 <li>אריחי מפה (CyclOSM, OpenStreetMap, OpenTopoMap, Waymarked Trails): האזור המוצג במפה.</li>
 <li>מסלולים מסומנים (Waymarked Trails, OpenStreetMap): האזור המוצג, טקסט החיפוש או המסלול שבחרתם.</li>
 </ul>
@@ -442,14 +445,14 @@ en:{
   'sf.paved':'Paved','sf.gravel':'Gravel / compacted','sf.dirt':'Dirt / unpaved','sf.unk':'Untagged',
   'p.trekking':'Balanced (recommended)','p.safety':'Safest','p.fastbike':'Fast – road','p.gravel':'Gravel roads','p.mtb':'Off-road (MTB)','p.shortest':'Shortest',
   'h.straight':'Continue straight','h.left':'Turn left','h.slightLeft':'Turn slightly left','h.sharpLeft':'Turn sharp left','h.right':'Turn right','h.slightRight':'Turn slightly right','h.sharpRight':'Turn sharp right',
-  'h.keepLeft':'Keep left','h.keepRight':'Keep right','h.uturn':'Make a U-turn','h.roundabout':'At the roundabout, take the {0} exit',
+  'h.keepLeft':'Keep left','h.keepRight':'Keep right','h.uturn':'Make a U-turn','h.roundabout':'At the roundabout, take the {0} exit',ontoFmt:'{0} onto {1}',
   ord:['','1st','2nd','3rd','4th','5th','6th','7th'],
   'u.m':'m','u.km':'km','u.min':'min','u.h':'h',
   phFrom:'From (default: my location)',phTo:'Where to?',clear:'Clear',swap:'Swap start and destination',myLoc:'My location',mapPoint:'Point on map',
   trailsBtn:'Bike routes nearby',layers:'Map layers',menu:'Menu',baseH:'Base map',overH:'Marked-route overlays',
   'b.cyclosm':'Cycling map (CyclOSM)','b.osm':'Standard map (OSM)','b.topo':'Topographic (OpenTopoMap)','o.cycling':'Marked cycling routes','o.mtb':'Marked MTB routes',
   mLang:'Language:',langName:'English',mGpxIn:'Import route from GPX file',mGpxOut:'Export current route to GPX',mSim:'Ride simulation (for testing)',mVoice:'Voice guidance:',on:'On',off:'Off',
-  mTheme:'Theme:','th.auto':'Auto','th.light':'Light','th.dark':'Dark',mAbout:'About, terms & privacy',
+  mTheme:'Theme:','th.auto':'Auto (dark at night)','th.light':'Light','th.dark':'Dark',mAbout:'About, terms & privacy',
   nvRem:'Remaining',nvEta:'Arrival',nvKmh:'km/h',nvStop:'End navigation',nvCenter:'Re-center',
   geoDenied:'Location permission denied. Please allow the app to access your location.',geoFail:'Unable to get your location. Make sure GPS is on.',
   noResults:'No results found',place:'Place',coords:'Coordinates',noDest:'No destination to swap',
@@ -518,7 +521,7 @@ en:{
 <p>To work, the App contacts external services directly from your device:</p>
 <ul>
 <li>Routing (BRouter, OSRM): your start point, destination and waypoints; when a route is recalculated – also your current location.</li>
-<li>Address search (Photon, Nominatim): your search text, the centre of the visible map, and the coordinates of a point you picked on the map.</li>
+<li>Address search (Photon, Nominatim): your search text, the centre of the visible map, and the coordinates of a point you picked on the map. During navigation – also points along the route, to show street names in the instructions (Nominatim).</li>
 <li>Map tiles (CyclOSM, OpenStreetMap, OpenTopoMap, Waymarked Trails): the area shown on the map.</li>
 <li>Marked routes (Waymarked Trails, OpenStreetMap): the visible area, your search text or the route you selected.</li>
 </ul>
@@ -656,8 +659,23 @@ function hintFrom(cmd,exit,angle){
   return angle<0?HINT[2]:HINT[5];
 }
 function hintFromAngle(a){const s=a<0?0:3, m=Math.abs(a); if(m>150)return UTURN; return HINT[(m>110?4:m>55?2:3)+s];}
-function hintText(h){return h.key==='roundabout'?t('h.roundabout',I18N[LANG].ord[h.exit]||h.exit):t('h.'+h.key);}
-const copyHint=(h,off)=>({i:h.i+off,arrow:h.arrow,key:h.key,exit:h.exit});
+/* SPEAKING: true בזמן ניסוח משפט להקראה. אם מנוע הדיבור עבר לאנגלית, שם רחוב בעברית לא מוקרא (הוא היה משובש) אבל עדיין מוצג על המסך */
+let SPEAKING=false;
+const ontoName=nm=>LANG==='he'?(/^[\u0590-\u05FF]/.test(nm)?'ל'+nm:'אל '+nm):nm;
+function hintText(h){
+  const b=h.key==='roundabout'?t('h.roundabout',I18N[LANG].ord[h.exit]||h.exit):t('h.'+h.key);
+  if(!h.name||(SPEAKING&&LANG!=='he'&&/[\u0590-\u05FF]/.test(h.name)))return b;
+  return t('ontoFmt',b,ontoName(h.name));
+}
+const copyHint=(h,off)=>({i:h.i+off,arrow:h.arrow,key:h.key,exit:h.exit,name:h.name});
+/* גובה השמש במעלות (קירוב מספיק להחלטה אם כבר חשוך) */
+function sunAlt(date,lat,lng){
+  const d=date.getTime()/86400000-10957.5, g=rad(357.529+0.98560028*d), q=280.459+0.98564736*d;
+  const Ls=rad(q+1.915*Math.sin(g)+0.020*Math.sin(2*g)), e=rad(23.439-0.00000036*d);
+  const ra=Math.atan2(Math.cos(e)*Math.sin(Ls),Math.cos(Ls)), dec=Math.asin(Math.sin(e)*Math.sin(Ls));
+  const gmst=((18.697374558+24.06570982441908*d)%24+24)%24, H=rad(gmst*15+lng)-ra, la=rad(lat);
+  return Math.asin(Math.sin(la)*Math.sin(dec)+Math.cos(la)*Math.cos(dec)*Math.cos(H))*180/Math.PI;
+}
 
 /* פענוח תשובת BRouter (GeoJSON) למבנה מסלול אחיד */
 function parseBRouter(gj,profile){
@@ -796,7 +814,7 @@ function toGPX(r,name){
 function fmtDist(m){return m<950?Math.max(10,Math.round(m/10)*10)+' '+t('u.m'):(m<20000?(m/1000).toFixed(1):Math.round(m/1000))+' '+t('u.km');}
 function fmtTime(s){const m=Math.max(1,Math.round(s/60));return m<60?m+' '+t('u.min'):Math.floor(m/60)+':'+String(m%60).padStart(2,'0')+' '+t('u.h');}
 /* ===================== /CORE ===================== */
-if(typeof module!=='undefined'){module.exports={steepRuns,BIKES,setBike:b=>{BIKE=b;},rideTime,maxGradeOf,I18N,t,setLang:l=>{LANG=l;},hintText,parseBRouter,finalizeRoute,project,pointAt,sliceRoute,concatRoutes,buildTrail,hintsFromGeometry,toGPX,classify,surfGroup,fmtDist,fmtTime,parseOSRM};}
+if(typeof module!=='undefined'){module.exports={sunAlt,setSpeaking:v=>{SPEAKING=v;},steepRuns,BIKES,setBike:b=>{BIKE=b;},rideTime,maxGradeOf,I18N,t,setLang:l=>{LANG=l;},hintText,parseBRouter,finalizeRoute,project,pointAt,sliceRoute,concatRoutes,buildTrail,hintsFromGeometry,toGPX,classify,surfGroup,fmtDist,fmtTime,parseOSRM};}
 else (function(){
 /* ===================== APP ===================== */
 const $=id=>document.getElementById(id);
@@ -848,8 +866,18 @@ async function fetchJSON(url,ms){
 }
 
 /* ---------- ערכת צבעים, שפה ---------- */
+/* מפה כהה כשהממשק כהה; במצב "אוטומטי" הממשק והמפה מחשיכים גם בניווט אחרי השקיעה */
+const darkMQ=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):null;
+function isDarkNow(){
+  if(S.theme!=='auto')return S.theme==='dark';
+  if(darkMQ&&darkMQ.matches)return true;
+  const p=S.nav&&(S.nav.pos||{lat:S.nav.route.coords[0][0],lng:S.nav.route.coords[0][1]});
+  return !!(p&&sunAlt(new Date(),p.lat,p.lng)<-3);
+}
 function applyTheme(){
-  if(S.theme==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',S.theme);
+  const de=document.documentElement, dark=isDarkNow();
+  if(S.theme!=='auto')de.setAttribute('data-theme',S.theme); else if(dark&&!(darkMQ&&darkMQ.matches))de.setAttribute('data-theme','dark'); else de.removeAttribute('data-theme');
+  document.body.classList.toggle('night',dark);
   $('themeState').textContent=t('th.'+S.theme);
   $('voiceState').textContent=t('vm.'+S.voice); $('muteIco').innerHTML='<path d="M4 9h3l5-4v14l-5-4H4z"/>'+VOICE_ICO[S.voice];
   $('langState').textContent=t('langName');
@@ -889,6 +917,8 @@ $('baseList').onchange=e=>setBase(e.target.value);
 $('overList').onchange=e=>{const k=e.target.value;if(e.target.checked){overOn.add(k);OVERS[k].addTo(map);}else{overOn.delete(k);map.removeLayer(OVERS[k]);}store.set({overs:[...overOn]});};
 map.on('moveend',()=>{const c=map.getCenter();store.set({view:[c.lat,c.lng,map.getZoom()]});});
 
+if(darkMQ&&darkMQ.addEventListener)darkMQ.addEventListener('change',()=>applyTheme());
+const turnLayer=L.layerGroup().addTo(map); // סימון נקודת הפנייה הבאה בניווט
 const routeLayer=L.layerGroup().addTo(map), markLayer=L.layerGroup().addTo(map), meLayer=L.layerGroup().addTo(map);
 const pin=(cls,txt)=>L.divIcon({className:'',html:`<div class="pin ${cls}"><span>${txt}</span></div>`,iconSize:[26,26],iconAnchor:[13,26]});
 
@@ -1290,7 +1320,7 @@ async function pickTtsLang(){
 function ttsFail(e){if(ttsWarned)return;ttsWarned=true;toast(t('ttsFail')+(e&&e.message?' ('+e.message+')':''),9000);}
 /* fn מחזירה את הטקסט; היא מורצת כש-LANG היא שפת ההקראה, כדי שהמשפט ינוסח בשפה שהמכשיר יודע להקריא */
 function say(fn,alert){
-  if(S.voice==='off'||(S.voice==='alerts'&&!alert))return; const vl=ttsLang||LANG, ui=LANG; let txt; LANG=vl; try{txt=fn();}finally{LANG=ui;}
+  if(S.voice==='off'||(S.voice==='alerts'&&!alert))return; const vl=ttsLang||LANG, ui=LANG; let txt; LANG=vl; SPEAKING=true; try{txt=fn();}finally{LANG=ui;SPEAKING=false;}
   const lang=vl==='he'?'he-IL':'en-US', P=NAT();
   if(P&&P.TextToSpeech){P.TextToSpeech.speak({text:txt,lang,rate:1,volume:1,queueStrategy:0}).catch(ttsFail);return;}
   if(!('speechSynthesis' in window)){ttsFail();return;}
@@ -1310,6 +1340,7 @@ function startNav(sim){
   if(!sim&&!navigator.geolocation){geoErr();return;}
   S.routes=[r];S.active=0;S.tok++;
   S.nav={route:r,i:0,along:0,off:0,rerouting:false,lastReroute:0,follow:true,pos:null,t0:Date.now(),fails:0,over:false,ridden:0,prev:null,warned:{},segK:0,steep:steepRuns(r,BIKES[S.bike].steep)};
+  applyTheme(); fetchNames(r);
   setFollow(true); ['navThen','navWay','navWarn','navConfirm'].forEach(id=>{$(id).hidden=true;}); $('nvTime').textContent='–'; $('nvSub').textContent='';
   document.body.classList.add('nav'); document.querySelectorAll('.pop.open').forEach(p=>p.classList.remove('open')); map.closePopup(); drawRoutes(); drawMarkers(); keepAwake(true);
   if(r.coords.length>1)povTurn(bearing(r.coords[0],r.coords[1]));
@@ -1323,7 +1354,7 @@ function stopNav(silent){
   const n=S.nav; if(!n)return;
   if(n.watch!=null)navigator.geolocation.clearWatch(n.watch);
   if(S.sim){clearInterval(S.sim.timer);S.sim=null;}
-  S.nav=null; clearTimeout(overT); clearTimeout(stopT); document.body.classList.remove('nav','free'); applyPov(); $('navTop').classList.remove('warn'); keepAwake(false);
+  S.nav=null; nameTok++; turnLayer.clearLayers(); applyTheme(); clearTimeout(overT); clearTimeout(stopT); document.body.classList.remove('nav','free'); applyPov(); $('navTop').classList.remove('warn'); keepAwake(false);
   if(!silent)hush();
   drawMarkers(); drawRoutes(); if(S.view)render(); if(!silent)toast(t('navEnded'));
 }
@@ -1349,8 +1380,9 @@ function onPos(lat,lng,acc,speed,heading){
   showMe(lat,lng,acc,heading);
   if(S.pov&&!n.over){ // תצוגת רוכב: המפה מסתובבת לפי כיוון המסלול שלפנים, ובסטייה – לפי כיוון התנועה
     if(on&&r.dist-pr.along>8)povTurn(bearing(pointAt(r,pr.along).p,pointAt(r,Math.min(r.dist,pr.along+25)).p)); else if(!on)povTurn(heading);
-    map.setView(p,17,{animate:false}); // בלי הנפשה: סימון הרוכב הוא שכבה נפרדת מעל המפה ואסור שיפגר אחריה
-  }else if(n.follow)map.setView(p,Math.max(map.getZoom(),17),{animate:true});
+    map.setView(p,n.zoom||17,{animate:false}); // בלי הנפשה: סימון הרוכב הוא שכבה נפרדת מעל המפה ואסור שיפגר אחריה
+  }else if(n.follow)map.setView(p,n.zoom||17,{animate:true});
+  if(Date.now()-(n.themeT||0)>60000){n.themeT=Date.now();applyTheme();} // מעבר למפה כהה עם השקיעה
   $('nvSpd').textContent=speed!=null&&!isNaN(speed)?Math.round(speed*3.6):'–';
   if(n.rerouting)return;
   if(!on){
@@ -1366,6 +1398,7 @@ function onPos(lat,lng,acc,speed,heading){
   if(rem<25){arrive();return;}
   updateWay(n,r);
   const h=r.hints.find(x=>r.cum[x.i]>n.along+4);
+  markTurn(n,r,h); autoZoom(n,h?r.cum[h.i]-n.along:null);
   if(!h){$('navThen').hidden=true;setBanner('↑',fmtDist(rem),t('toDest'),false);return;}
   const dh=r.cum[h.i]-n.along, txt=hintText(h);
   setBanner(h.arrow,fmtDist(dh),txt,false);
@@ -1392,6 +1425,43 @@ function updateWay(n,r){
   warn.hidden=!w; if(!w)return;
   warn.textContent=t('warn'+w.type,fmtDist(w.d));
   if(w.d<=250&&!n.warned[w.key]){n.warned[w.key]=1;say(()=>t('say'+w.type,Math.max(50,Math.round(w.d/50)*50)),true);buzz(350);}
+}
+/* התקרבות אוטומטית: קרוב לפנייה מתקרבים, בקטע ישר וארוך מתרחקים. בין הספים נשארים ברמה הנוכחית כדי שהמפה לא תקפוץ */
+function autoZoom(n,dh){
+  let z=n.zoom||17;
+  if(dh!=null&&dh<=150)z=18; else if(dh==null||dh>=1200)z=16; else if(dh>=300)z=17;
+  if(z===n.zoom)return; n.zoom=z;
+  if((S.pov&&!n.over)||n.follow)map.setZoom(z,{animate:true}); // המפה כבר ממורכזת על הרוכב, כך שהזום נעשה סביבו
+}
+/* עיגול על הצומת של הפנייה הבאה */
+function markTurn(n,r,h){
+  if(n.turnH===h)return; n.turnH=h; turnLayer.clearLayers();
+  if(h)L.circleMarker(r.coords[h.i].slice(0,2),{radius:9,weight:3,className:'turnpt',interactive:false}).addTo(turnLayer);
+}
+/* שמות רחובות להנחיות. BRouter אינו מחזיר שמות, ולכן לכל פנייה נשאלת Nominatim על נקודה כ-30 מ׳ אחריה.
+   בקשה אחת לשנייה לכל היותר (מדיניות השירות), מהפנייה הקרובה והלאה. שם זהה לרחוב שכבר רוכבים בו לא מוצג. */
+const nameCache=new Map(); let nameTok=0;
+const pause=ms=>new Promise(r=>setTimeout(r,ms));
+async function fetchNames(r){
+  const tok=++nameTok, live=()=>tok===nameTok&&S.nav&&S.nav.route===r;
+  const at=async m=>{
+    const q=pointAt(r,Math.max(0,Math.min(r.dist,m))).p, k=LANG+':'+q[0].toFixed(4)+','+q[1].toFixed(4);
+    if(nameCache.has(k))return nameCache.get(k);
+    await pause(1100); if(!live())throw new Error('stale');
+    let nm=null;
+    try{const j=await fetchJSON(`https://nominatim.openstreetmap.org/reverse?lat=${q[0].toFixed(6)}&lon=${q[1].toFixed(6)}&format=jsonv2&zoom=17&accept-language=${LANG}`,8000);
+      nm=(j.category==='highway'&&j.name)||(j.address&&j.address.road)||null;}catch(e){}
+    nameCache.set(k,nm); return nm;
+  };
+  try{
+    const m0=S.nav?S.nav.along:0; let prev=await at(m0+15), cnt=0;
+    for(let k=0;k<r.hints.length&&cnt<40;k++){
+      const x=r.hints[k], m=r.cum[x.i]; if(m<m0)continue;
+      const nx=r.hints[k+1], end=nx?Math.min(m+30,(m+r.cum[nx.i])/2):m+30;
+      const nm=await at(end); cnt++; if(!live())return;
+      if(nm&&nm!==prev)x.name=nm; if(nm)prev=nm;
+    }
+  }catch(e){}
 }
 /* מבט על המסלול שנותר; חוזר לבד למעקב אחרי 10 שניות */
 let overT=null, stopT=null;
@@ -1431,6 +1501,7 @@ async function reroute(){
     if(S.nav!==n)return;
     n.route=nr;n.i=0;n.along=0;n.off=0;n.fails=0;n.segK=0;n.warned={};n.steep=steepRuns(nr,BIKES[S.bike].steep); S.routes=[nr];S.active=0; drawRoutes();
     if(S.sim){S.sim.along=0;S.sim.hold=null;}
+    n.turnH=undefined; fetchNames(nr);
     toast(t('updated',fmtDist(nr.dist)));
   }catch(e){ if(S.nav!==n)return; n.fails++; toast(t('recalcFail')); }
   finally{ if(S.nav===n)n.rerouting=false; }
