@@ -70,7 +70,15 @@ button{cursor:pointer}
 .chip.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
 
 #fabs{position:fixed;z-index:480;inset-inline-end:10px;top:calc(10px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:8px}
-@media (max-width:900px){#fabs{top:calc(150px + env(safe-area-inset-top))}}
+/* במסך צר הכפתורים הצפים מוגבלים לגובה שמעל הגיליון התחתון (--sheetH) וגולשים לטור נוסף במקום להסתתר מאחוריו.
+   הכיוון הפוך מכיוון הדף כדי שהטור הראשון יישאר צמוד לקצה המסך – לכן כאן מיקום פיזי ולא לוגי. */
+@media (max-width:900px){
+  #fabs{top:calc(150px + env(safe-area-inset-top));display:grid;grid-auto-flow:column;grid-template-rows:repeat(auto-fill,44px);inset-inline-end:auto;pointer-events:none;
+    height:calc(100vh - var(--sheetH,0px) - 158px - env(safe-area-inset-top));height:calc(100dvh - var(--sheetH,0px) - 158px - env(safe-area-inset-top))}
+  #fabs .fab{pointer-events:auto}
+  :root[dir="rtl"] #fabs{left:10px;direction:ltr}
+  :root[dir="ltr"] #fabs{right:10px;direction:rtl}
+}
 .fab{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);display:grid;place-items:center}
 .fab b{font-size:13px}
 .fab svg{width:22px;height:22px;fill:none;stroke:var(--text);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -1042,6 +1050,7 @@ function selectRoute(k){S.picked=true;S.active=k;drawRoutes();render();}
 /* ---------- גיליון תוצאות ---------- */
 function openSheet(title,html){$('sheetTitle').textContent=title;$('sheetBody').innerHTML=html;$('sheet').classList.add('open');$('sheet').classList.remove('collapsed');$('sheetToggle').textContent='▾';}
 function closeSheet(){$('sheet').classList.remove('open');S.view='';}
+new ResizeObserver(()=>document.body.style.setProperty('--sheetH',$('sheet').offsetHeight+'px')).observe($('sheet')); // לפריסת הכפתורים הצפים
 $('sheetHead').onclick=()=>{const c=$('sheet').classList.toggle('collapsed');$('sheetToggle').textContent=c?'▴':'▾';};
 
 function barHTML(m,total,keys,prefix,cssPrefix){
