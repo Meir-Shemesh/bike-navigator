@@ -70,20 +70,16 @@ button{cursor:pointer}
 .chip.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
 
 #fabs{position:fixed;z-index:480;inset-inline-end:10px;top:calc(10px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:8px}
-/* במסך צר הכפתורים הצפים מוגבלים לגובה שמעל הגיליון התחתון (--sheetH) וגולשים לטור נוסף במקום להסתתר מאחוריו.
-   הכיוון הפוך מכיוון הדף כדי שהטור הראשון יישאר צמוד לקצה המסך – לכן כאן מיקום פיזי ולא לוגי. */
+/* במסך צר: הכפתורים הצפים בתחתית, בהישג האגודל, תמיד מעל הגיליון התחתון (--sheetH) */
 @media (max-width:900px){
-  #fabs{top:calc(150px + env(safe-area-inset-top));display:grid;grid-auto-flow:column;grid-template-rows:repeat(auto-fill,44px);inset-inline-end:auto;pointer-events:none;
-    height:calc(100vh - var(--sheetH,0px) - 158px - env(safe-area-inset-top));height:calc(100dvh - var(--sheetH,0px) - 158px - env(safe-area-inset-top))}
-  #fabs .fab{pointer-events:auto}
-  :root[dir="rtl"] #fabs{left:10px;direction:ltr}
-  :root[dir="ltr"] #fabs{right:10px;direction:rtl}
+  #fabs{top:auto;bottom:calc(var(--sheetH,0px) + 30px + env(safe-area-inset-bottom))}
 }
 .fab{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);display:grid;place-items:center}
 .fab b{font-size:13px}
 .fab svg{width:22px;height:22px;fill:none;stroke:var(--text);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .pop{position:fixed;z-index:600;inset-inline-end:62px;top:calc(60px + env(safe-area-inset-top));width:260px;padding:10px;display:none}
-@media (max-width:900px){.pop{top:calc(150px + env(safe-area-inset-top))}}
+@media (max-width:900px){.pop{top:auto;bottom:calc(var(--sheetH,0px) + 30px + env(safe-area-inset-bottom));max-height:calc(100vh - var(--sheetH,0px) - 60px);overflow:auto}
+  body.nav .pop{top:calc(120px + env(safe-area-inset-top));bottom:auto}}
 .pop.open{display:block}
 .pop h4{margin:4px 0 6px;font-size:13px;color:var(--muted);font-weight:600}
 .pop label{display:flex;align-items:center;gap:8px;padding:6px 2px}
@@ -126,7 +122,9 @@ button{cursor:pointer}
 .tbub{position:absolute;transform:translate(-50%,-135%);white-space:nowrap;background:var(--accent);color:var(--accent-text);font-weight:700;font-size:13px;border-radius:9px;padding:3px 9px;box-shadow:var(--shadow);border:2px solid var(--casing);cursor:pointer}
 .tbub.alt{background:var(--surface);color:var(--text);border-color:var(--border)}
 body.plan #chips{display:none}
-@media (max-width:900px){body.plan #fabs,body.plan .pop{top:calc(112px + env(safe-area-inset-top))}}
+body:not(.od) #rowFrom,body:not(.od) #btnSwap{display:none}
+.ci{width:14px;height:14px;vertical-align:-2px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-inline-end:4px}
+.pin.p{background:var(--me)}
 h3.sec{font-size:13px;color:var(--muted);margin:12px 0 5px;font-weight:600}
 .bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--surface2)}
 .bar i{display:block;height:100%}
@@ -218,7 +216,7 @@ body.free #btnCenter{display:block}
 .kv.sum{font-size:17px;gap:8px 16px;margin:6px 0 4px}
 body.nav #search,body.nav #sheet,body.nav #fabs .hide-nav{display:none!important}
 body.nav #navTop,body.nav #navBottom{display:block}
-body.nav #fabs{top:calc(120px + env(safe-area-inset-top))}
+body.nav #fabs{top:calc(120px + env(safe-area-inset-top));bottom:auto}
 /* rider view: the map is tilted and rotated so the riding direction points up */
 #fabs .only-nav{display:none}
 body.nav #fabs .only-nav{display:grid}
@@ -243,7 +241,7 @@ body.pov #povAttr a{color:var(--muted)}
 <div id="search" class="panel card">
   <div class="row">
     <div style="flex:1;display:flex;flex-direction:column;gap:6px">
-      <div class="field"><i class="dot a"></i><input id="inFrom" data-i18n-ph="phFrom" autocomplete="off" enterkeyhint="search"><button class="x" data-clear="from" data-i18n-title="clear">×</button></div>
+      <div class="field" id="rowFrom"><i class="dot a"></i><input id="inFrom" data-i18n-ph="phFrom" autocomplete="off" enterkeyhint="search"><button class="x" data-clear="from" data-i18n-title="clear">×</button></div>
       <div class="field"><i class="dot b"></i><input id="inTo" data-i18n-ph="phTo" autocomplete="off" enterkeyhint="search"><button class="x" data-clear="to" data-i18n-title="clear">×</button></div>
     </div>
     <button class="iconbtn" id="btnSwap" data-i18n-title="swap">⇅</button>
@@ -256,9 +254,7 @@ body.pov #povAttr a{color:var(--muted)}
 <div id="fabs">
   <button class="fab only-nav" id="fabPov" data-i18n-title="povBtn"><b id="fabPovTxt"></b></button>
   <button class="fab only-nav" id="btnMute" data-i18n-title="voiceBtn"><svg id="muteIco" viewBox="0 0 24 24"></svg></button>
-  <button class="fab hide-nav" id="fabLang" data-i18n-title="langSwitch"><b id="fabLangTxt"></b></button>
   <button class="fab hide-nav" id="fabLocate" data-i18n-title="myLoc"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
-  <button class="fab hide-nav" id="fabTrails" data-i18n-title="trailsBtn"><svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="3.5"/><circle cx="18" cy="17" r="3.5"/><path d="M6 17l4-8h5l3 8M10 9l3 8M9 6h3"/></svg></button>
   <button class="fab" id="fabLayers" data-i18n-title="layers"><svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5"/></svg></button>
   <button class="fab hide-nav" id="fabMenu" data-i18n-title="menu"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
 </div>
@@ -404,7 +400,7 @@ he:{
 </ul>
 <p>בכל פנייה כזו השירות נחשף גם לכתובת ה-IP של המכשיר. לשירותים אלה מדיניות פרטיות משלהם, ולבעל האפליקציה אין שליטה עליהם.</p>
 <h4>מידע שנשמר במכשיר</h4>
-<p>ההעדפות שלכם (שפה, ערכת צבעים, סגנון רכיבה, סוג האופניים, תלילות המסלול, סימון הרוכב ותצוגת הניווט, שכבות מפה, מצב ההנחיות הקוליות, תצוגת המפה האחרונה ואישור תנאי השימוש) נשמרות במכשיר בלבד. ניתן למחוק אותן בניקוי נתוני האפליקציה או הדפדפן. קובצי GPX שתייבאו מעובדים במכשיר בלבד.</p>
+<p>ההעדפות שלכם, המקומות ששמרתם (בית, עבודה) והיעדים האחרונים (שפה, ערכת צבעים, סגנון רכיבה, סוג האופניים, תלילות המסלול, סימון הרוכב ותצוגת הניווט, שכבות מפה, מצב ההנחיות הקוליות, תצוגת המפה האחרונה ואישור תנאי השימוש) נשמרות במכשיר בלבד. ניתן למחוק אותן בניקוי נתוני האפליקציה או הדפדפן. קובצי GPX שתייבאו מעובדים במכשיר בלבד.</p>
 <h4>הרשאות</h4>
 <p>מיקום – לצורך ניווט; גישה לרשת – לטעינת מפות ומסלולים. ההנחיות הקוליות מופקות בידי מנוע ההקראה של המכשיר.</p>`,
   'legal.a11y':`<p class="muted small">עדכון אחרון: נובמבר 2026</p>
@@ -433,6 +429,8 @@ he:{
   ttsNoLang:'במכשיר לא מותקן קול בעברית, ולכן ההנחיות מושמעות באנגלית. להתקנת קול עברי: הגדרות המכשיר ← נגישות ← המרת טקסט לדיבור.',
   ttsFail:'ההנחיות הקוליות אינן זמינות במכשיר זה',voiceTest:'הנחיות קוליות: {0}','vm.on':'מלאות','vm.alerts':'התרעות בלבד','vm.off':'כבויות',voiceBtn:'הנחיות קוליות',
   styleH:'סוג המסלול',goBtn:'יוצאים',moreBtn:'פרטים ושלבים',lessBtn:'פחות פרטים',arrAt:'הגעה {0}',
+  qHome:'בית',qWork:'עבודה',qTrails:'מסלולים באזור',noPlace:'עדיין לא נשמר מקום. הקישו על נקודה במפה ובחרו "שמירה כבית" או "שמירה כעבודה".',
+  saveHome:'שמירה כבית',saveWork:'שמירה כעבודה',savedOk:'נשמר',fromYou:'{0} ממך',routeHere:'מסלול לכאן',
   then:'ואז',nvOver:'מבט על המסלול',nvStopQ:'לסיים את הניווט?',nvContinue:'ממשיכים',
   warnBusy:'בעוד {0}: כביש סואן',warnSteep:'בעוד {0}: עלייה תלולה',sayBusy:'בעוד {0} מטרים, כביש סואן. רכבו בזהירות',saySteep:'בעוד {0} מטרים, עלייה תלולה',
   arrivedT:'הגעתם ליעד',sumDist:'מרחק',sumTime:'זמן רכיבה',sumAvg:'מהירות ממוצעת',
@@ -526,7 +524,7 @@ en:{
 </ul>
 <p>With every such request the service also sees your device's IP address. These services have their own privacy policies, and the owner of the App has no control over them.</p>
 <h4>Information stored on your device</h4>
-<p>Your preferences (language, theme, riding style, bike type, route steepness, rider marker and navigation view, map layers, voice guidance setting, last map view and acceptance of the Terms of Use) are stored on your device only. You can delete them by clearing the app's or browser's data. GPX files you import are processed on your device only.</p>
+<p>Your preferences, the places you saved (home, work) and your recent destinations (language, theme, riding style, bike type, route steepness, rider marker and navigation view, map layers, voice guidance setting, last map view and acceptance of the Terms of Use) are stored on your device only. You can delete them by clearing the app's or browser's data. GPX files you import are processed on your device only.</p>
 <h4>Permissions</h4>
 <p>Location – for navigation; network access – to load maps and routes. Voice guidance is produced by your device's text-to-speech engine.</p>`,
   'legal.a11y':`<p class="muted small">Last updated: November 2026</p>
@@ -555,6 +553,8 @@ en:{
   ttsNoLang:'This device has no voice installed for this language, so guidance may be silent. To install one: device Settings → Accessibility → Text-to-speech.',
   ttsFail:'Voice guidance is not available on this device',voiceTest:'Voice guidance: {0}','vm.on':'Full','vm.alerts':'Alerts only','vm.off':'Off',voiceBtn:'Voice guidance',
   styleH:'Route type',goBtn:'Go',moreBtn:'Details & steps',lessBtn:'Less detail',arrAt:'arrive {0}',
+  qHome:'Home',qWork:'Work',qTrails:'Routes nearby',noPlace:'No place saved yet. Tap a point on the map and choose "Save as home" or "Save as work".',
+  saveHome:'Save as home',saveWork:'Save as work',savedOk:'Saved',fromYou:'{0} from you',routeHere:'Route to here',
   then:'Then',nvOver:'Route overview',nvStopQ:'End navigation?',nvContinue:'Keep riding',
   warnBusy:'In {0}: busy road',warnSteep:'In {0}: steep climb',sayBusy:'In {0} meters, busy road. Ride carefully',saySteep:'In {0} meters, steep climb',
   arrivedT:'You have arrived',sumDist:'Distance',sumTime:'Riding time',sumAvg:'Average speed',
@@ -805,7 +805,8 @@ const store={get(){try{return JSON.parse(localStorage.getItem('bikenav.v1'))||{}
 const saved=store.get();
 LANG=saved.lang==='he'||saved.lang==='en'?saved.lang:(/^(he|iw)/i.test(navigator.language||'')?'he':'en');
 const S={from:null,to:null,vias:[],profile:saved.profile||'trekking',routes:[],active:0,view:'',tok:0,nav:null,sim:null,
-  voice:saved.voice===false||saved.voice==='off'?'off':saved.voice==='alerts'?'alerts':'on',theme:saved.theme||'auto',me:null,trails:[],trailMeta:null,picked:false,full:false,
+  voice:saved.voice===false||saved.voice==='off'?'off':saved.voice==='alerts'?'alerts':'on',theme:saved.theme||'auto',me:null,trails:[],trailMeta:null,picked:false,full:false,place:null,placeBack:'',
+  places:saved.places&&typeof saved.places==='object'?saved.places:{},recent:Array.isArray(saved.recent)?saved.recent:[],
   bike:BIKES[saved.bike]?saved.bike:'mech',hill:HILLS.includes(saved.hill)?saved.hill:'mid',icon:saved.icon||null,pov:saved.pov!==false,hd:null};
 BIKE=S.bike;
 /* סימון הרוכב: אייקון לפי סוג האופניים, אלא אם נבחר חץ/נקודה */
@@ -826,7 +827,16 @@ const LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACpCAIAAAAEDCBaAA
 const VOICE_ICO={on:'<path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/>',alerts:'<path d="M18.5 7v6M18.5 16.4v.4"/>',off:'<path d="M16 9l5 6M21 9l-5 6"/>'};
 const buzz=p=>{if(S.voice!=='off'&&navigator.vibrate)try{navigator.vibrate(p);}catch(e){}};
 /* סוג המסלול: סגנונות הרכיבה + כפתור הגדרות הרכיבה. מוצג בכרטיס החיפוש, ובזמן תכנון מסלול – בראש הגיליון התחתון */
-const chipsHTML=()=>`<button class="chip chipRide" title="${t('rideBtn')}" aria-label="${t('rideBtn')}">⚙ ${t('bks.'+S.bike)} · ${t('hls.'+S.hill)}</button>`+PROFILES.map(p=>`<button class="chip ${p.id===S.profile?'on':''}" data-p="${p.id}">${t('p.'+p.id)}</button>`).join('');
+const ICO_SET='<svg class="ci" viewBox="0 0 24 24"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.5"/><circle cx="8" cy="17" r="2.5"/></svg>';
+const rideLabel=()=>ICO_SET+t('bks.'+S.bike)+' · '+t('hls.'+S.hill);
+/* שורת הקיצורים במסך הבית (בלי יעד): מקומות שמורים, מסלולים באזור, וסוג המסלול הנוכחי */
+const quickHTML=()=>`<button class="chip" data-q="home">${t('qHome')}</button><button class="chip" data-q="work">${t('qWork')}</button><button class="chip" data-q="trails">${t('qTrails')}</button><button class="chip" data-q="style" title="${t('rideBtn')}">${ICO_SET}${t('styleH')}: ${t('p.'+S.profile)}</button>`;
+/* יעדים אחרונים – נשמרים במכשיר בלבד */
+function addRecent(p){ if(!p||!p.label)return;
+  S.recent=[{lat:p.lat,lng:p.lng,label:p.label}].concat(S.recent.filter(x=>hav([x.lat,x.lng],[p.lat,p.lng])>60)).slice(0,6); store.set({recent:S.recent}); }
+const recentItems=()=>['home','work'].filter(k=>S.places[k]).map(k=>({lat:S.places[k].lat,lng:S.places[k].lng,main:t(k==='home'?'qHome':'qWork'),sub:S.places[k].label||'',label:S.places[k].label||t(k==='home'?'qHome':'qWork')}))
+  .concat(S.recent.map(x=>({lat:x.lat,lng:x.lng,main:x.label,sub:'',label:x.label})));
+const chipsHTML=()=>`<button class="chip chipRide" title="${t('rideBtn')}" aria-label="${t('rideBtn')}">${rideLabel()}</button>`+PROFILES.map(p=>`<button class="chip ${p.id===S.profile?'on':''}" data-p="${p.id}">${t('p.'+p.id)}</button>`).join('');
 const stylesHTML=()=>`<div class="stylebox"><div class="lbl">${t('styleH')}</div><div class="chips wrap">${chipsHTML()}</div></div>`;
 const labelOf=p=>p.label||t(p.nameKey||'mapPoint');
 
@@ -849,11 +859,11 @@ function applyLang(){
   document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));
   document.querySelectorAll('[data-i18n-ph]').forEach(e=>e.placeholder=t(e.dataset.i18nPh));
   document.querySelectorAll('[data-i18n-title]').forEach(e=>{e.title=t(e.dataset.i18nTitle);e.setAttribute('aria-label',e.title);});
-  $('chips').innerHTML=chipsHTML();
+  $('chips').innerHTML=quickHTML();
   $('baseList').innerHTML=Object.keys(BASES).map(k=>`<label><input type="radio" name="base" value="${k}" ${k===curBase?'checked':''}>${t('b.'+k)}</label>`).join('');
   $('overList').innerHTML=Object.keys(OVERS).map(k=>`<label><input type="checkbox" value="${k}" ${overOn.has(k)?'checked':''}>${t('o.'+k)}</label>`).join('');
   if(S.from)$('inFrom').value=labelOf(S.from); if(S.to)$('inTo').value=labelOf(S.to);
-  $('fabLangTxt').textContent=LANG==='he'?'EN':'עב'; renderRide();
+  renderRide();
   map.attributionControl.setPrefix('<a href="#" id="credit">© '+t('ownerShort')+'</a>');
   $('sugg').hidden=true; map.closePopup(); drawMarkers(); drawRoutes(); applyTheme(); renderModal();
   if(S.view)render(); else $('sheet').classList.remove('open');
@@ -897,7 +907,8 @@ function drawRoutes(){
     L.marker(q,{icon:L.divIcon({className:'',html:`<div dir="${LANG==='he'?'rtl':'ltr'}" class="tbub ${k===S.active?'':'alt'}">${fmtTime(x.time)}</div>`,iconSize:[0,0]}),zIndexOffset:k===S.active?600:500}).on('click',()=>selectRoute(k)).addTo(routeLayer);});
 }
 function drawMarkers(){
-  markLayer.clearLayers();
+  markLayer.clearLayers(); syncPlan();
+  if(S.view==='place'&&S.place)L.marker([S.place.lat,S.place.lng],{icon:pin('p',''),interactive:false}).addTo(markLayer);
   const mk=(p,cls,txt,key,idx)=>{const m=L.marker([p.lat,p.lng],{icon:pin(cls,txt),draggable:!S.nav}).addTo(markLayer);
     m.on('dragend',()=>{const ll=m.getLatLng();const np={lat:ll.lat,lng:ll.lng};
       if(key==='via'){S.vias[idx]=np;computeRoutes();}else{setPoint(key,np);labelPoint(np,key);}});
@@ -929,10 +940,10 @@ function refreshMeIcon(){ if(meMarker&&S.me){meMarker.setIcon(meIcon());showMe(S
 /* ---------- הגדרות רכיבה: סוג האופניים, תלילות, סימון הרוכב ---------- */
 function renderRide(){
   const rb=(name,keys,cur,pre)=>keys.map(k=>`<label><input type="radio" name="${name}" value="${k}" ${k===cur?'checked':''}>${t(pre+k)}</label>`).join('');
-  $('popRide').innerHTML=`<h4>${t('bikeH')}</h4>${rb('bike',Object.keys(BIKES),S.bike,'bk.')}<h4>${t('hillH')}</h4>${rb('hill',HILLS,S.hill,'hl.')}
+  $('popRide').innerHTML=`<h4>${t('styleH')}</h4>${rb('prof',PROFILES.map(p=>p.id),S.profile,'p.')}<h4>${t('bikeH')}</h4>${rb('bike',Object.keys(BIKES),S.bike,'bk.')}<h4>${t('hillH')}</h4>${rb('hill',HILLS,S.hill,'hl.')}
     <h4>${t('iconH')}</h4><div class="icopick">${Object.keys(ICONS).map(k=>`<button data-icon="${k}" class="${k===meKind()?'on':''}" title="${t('ic.'+k)}" aria-label="${t('ic.'+k)}"><svg viewBox="0 0 24 24">${ICONS[k]}</svg></button>`).join('')}</div>
     <p class="muted small">${t('rideNote')}</p>`;
-  document.querySelectorAll('.chipRide').forEach(c=>{c.textContent='⚙ '+t('bks.'+S.bike)+' · '+t('hls.'+S.hill);});
+  document.querySelectorAll('.chipRide').forEach(c=>{c.innerHTML=rideLabel();}); $('chips').innerHTML=quickHTML();
   refreshMeIcon();
 }
 function rideChanged(){
@@ -940,7 +951,8 @@ function rideChanged(){
   if(S.view==='routes'&&S.to&&!S.nav)computeRoutes(); else if(S.view)render();
 }
 $('popRide').addEventListener('change',e=>{const el=e.target;
-  if(el.name==='bike'){S.bike=BIKE=el.value; if(S.icon!=='arrow'&&S.icon!=='dot')S.icon=null; store.set({bike:S.bike,icon:S.icon});}
+  if(el.name==='prof'){S.profile=el.value;store.set({profile:S.profile});}
+  else if(el.name==='bike'){S.bike=BIKE=el.value; if(S.icon!=='arrow'&&S.icon!=='dot')S.icon=null; store.set({bike:S.bike,icon:S.icon});}
   else if(el.name==='hill'){S.hill=el.value;store.set({hill:S.hill});}
   rideChanged();});
 $('popRide').addEventListener('click',e=>{const b=e.target.closest('[data-icon]');if(!b)return;S.icon=b.dataset.icon;store.set({icon:S.icon});renderRide();});
@@ -970,7 +982,8 @@ async function geocode(q){
 async function labelPoint(p,key){
   try{const j=await fetchJSON(`https://photon.komoot.io/reverse?lat=${p.lat}&lon=${p.lng}${photonLang()}`,7000);
     if(j.features&&j.features[0]){const l=photonLabel(j.features[0].properties);p.label=l.main+(l.sub?', '+l.sub.split(', ')[0]:'');
-      if(key==='from'&&S.from===p)$('inFrom').value=p.label; if(key==='to'&&S.to===p)$('inTo').value=p.label;}}catch(e){}
+      if(key==='from'&&S.from===p)$('inFrom').value=p.label; if(key==='to'&&S.to===p){$('inTo').value=p.label;addRecent(p);}
+      if(S.view==='place'&&S.place===p)render();}}catch(e){}
 }
 let suggTimer=null, suggTok=0;
 function showSugg(key,items){
@@ -986,12 +999,12 @@ function onType(key,el){
 }
 ['from','to'].forEach(key=>{const el=$(key==='from'?'inFrom':'inTo');
   el.addEventListener('input',()=>onType(key,el));
-  el.addEventListener('focus',()=>{if(key==='from'&&!el.value)showSugg('from',[]);});
+  el.addEventListener('focus',()=>{if(!el.value)showSugg(key,key==='to'?recentItems():[]);}); // יעד ריק: מקומות שמורים ויעדים אחרונים
   el.addEventListener('keydown',async e=>{if(e.key!=='Enter')return;clearTimeout(suggTimer);const tk=++suggTok;const items=await geocode(el.value.trim());if(tk!==suggTok)return;
     if(items.length===1)pickSugg(key,items[0]);else if(items.length)showSugg(key,items);else toast(t('noResults'));});
 });
 function pickSugg(key,it){$('sugg').hidden=true;document.activeElement&&document.activeElement.blur();
-  setPoint(key,{lat:it.lat,lng:it.lng,label:it.main});map.setView([it.lat,it.lng],Math.max(map.getZoom(),14));}
+  const p={lat:it.lat,lng:it.lng,label:it.label||it.main}; if(key==='to')addRecent(p); setPoint(key,p);map.setView([it.lat,it.lng],Math.max(map.getZoom(),14));}
 $('sugg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const box=$('sugg');
   if(b.dataset.me){$('sugg').hidden=true;useMyLocation();return;}pickSugg(box._key,box._items[+b.dataset.i]);});
 async function useMyLocation(){try{const me=await locateOnce(true);setPoint('from',{lat:me.lat,lng:me.lng,nameKey:'myLoc',isMe:true});}catch(e){}}
@@ -1003,15 +1016,24 @@ $('btnSwap').onclick=()=>{const a=S.from&&!S.from.isMe?S.from:(S.me?{lat:S.me.la
   S.from=b;S.to=a;S.vias.reverse();$('inFrom').value=labelOf(b);$('inTo').value=a?labelOf(a):'';drawMarkers();if(S.to)computeRoutes();};
 
 /* לחיצה על המפה: תפריט נקודה */
+/* הקשה על המפה: כרטיס מקום בגיליון התחתון */
 function mapMenu(ll){
-  const h=`<div style="display:flex;flex-direction:column;gap:6px;min-width:150px">
-    <button class="btn" data-pt="to">${t('navHere')}</button><button class="btn sec" data-pt="from">${t('fromHere')}</button>
-    ${S.to?`<button class="btn sec" data-pt="via">${t('addVia')}</button>`:''}</div>`;
-  const pop=L.popup({closeButton:false,offset:[0,-4]}).setLatLng(ll).setContent(h).openOn(map);
-  pop.getElement().addEventListener('click',e=>{const b=e.target.closest('[data-pt]');if(!b)return;map.closePopup();
-    const p={lat:ll.lat,lng:ll.lng};
-    if(b.dataset.pt==='via'){S.vias.push(p);drawMarkers();computeRoutes();}else{setPoint(b.dataset.pt,p);labelPoint(p,b.dataset.pt);}});
+  S.placeBack=S.view==='place'?S.placeBack:(/^(routes|trail|trails)$/.test(S.view)?S.view:''); // לאן חוזרים בלחיצה על 'חזרה'
+  const p=S.place={lat:ll.lat,lng:ll.lng}; S.view='place'; drawMarkers(); render(); labelPoint(p,'place');
 }
+function placeAct(a){
+  const p=S.place; if(!p)return; const cp={lat:p.lat,lng:p.lng,label:p.label};
+  if(a==='phome'||a==='pwork'){S.places[a==='phome'?'home':'work']=cp;store.set({places:S.places});toast(t('savedOk'));return;}
+  S.place=null;
+  if(a==='pback'){S.view=S.placeBack;drawMarkers();drawRoutes();render();return;}
+  if(a==='pclose'){closeSheet();drawMarkers();return;}
+  if(a==='pvia'){S.vias.push(cp);drawMarkers();computeRoutes();return;}
+  const key=a==='pto'?'to':'from'; if(!S.to&&key==='from')closeSheet();
+  if(key==='to')addRecent(cp); setPoint(key,cp); if(!cp.label)labelPoint(cp,key);
+}
+function quickClick(e){const b=e.target.closest('[data-q]');if(!b)return;const q=b.dataset.q;$('sugg').hidden=true;
+  if(q==='trails')showTrails(); else if(q==='style')togglePop('popRide');
+  else{const pl=S.places[q]; if(!pl){toast(t('noPlace'),6000);return;} setPoint('to',{lat:pl.lat,lng:pl.lng,label:pl.label||t(q==='home'?'qHome':'qWork')});}}
 map.on('click',e=>{
   document.querySelectorAll('.pop.open').forEach(p=>p.classList.remove('open')); $('sugg').hidden=true;
   if(document.body.classList.contains('pov')){if(S.sim)toast(t('simPov'));return;}
@@ -1025,7 +1047,7 @@ function chipClick(e){const b=e.target.closest('.chip');if(!b||(!b.dataset.p&&!b
   if(!b.dataset.p){$('sugg').hidden=true;togglePop('popRide');return true;}
   S.profile=b.dataset.p;store.set({profile:S.profile});
   document.querySelectorAll('.chip[data-p]').forEach(c=>c.classList.toggle('on',c.dataset.p===S.profile));if(S.to)computeRoutes();return true;}
-$('chips').onclick=chipClick;
+$('chips').onclick=quickClick;
 /* העדפת שיפועים ל-BRouter: עלות עלייה לפי סוג האופניים ומידת התלילות שנבחרה */
 function hillParams(){
   if(S.hill==='steep')return'&profile:uphillcost=0&profile:downhillcost=0';
@@ -1076,7 +1098,7 @@ function selectRoute(k){S.picked=true;S.active=k;drawRoutes();render();}
 
 /* ---------- גיליון תוצאות ---------- */
 /* body.plan = מתכננים מסלול ליעד: סוג המסלול מוצג בראש הגיליון במקום בכרטיס החיפוש */
-const syncPlan=()=>document.body.classList.toggle('plan',!!S.to&&S.view!=='trail'&&S.view!=='trails');
+const syncPlan=()=>{const c=document.body.classList;c.toggle('plan',!!S.to&&S.view!=='trail'&&S.view!=='trails');c.toggle('od',!!S.to||!!(S.from&&!S.from.isMe));};
 function openSheet(title,html){$('sheetTitle').textContent=title;$('sheetBody').innerHTML=html;$('sheet').classList.add('open');$('sheet').classList.remove('collapsed','full');$('sheetToggle').textContent='▾';syncPlan();}
 function closeSheet(){$('sheet').classList.remove('open');S.view='';syncPlan();}
 /* בבחירת מסלול הגיליון נפתח מקוצר; S.full מרחיב אותו לפירוט המלא */
@@ -1123,6 +1145,13 @@ function render(){
     h+=`<div class="more">${detailHTML(r)}<div class="btns"><button class="btn sec" data-act="gpx">${t('gpxExp')}</button></div><p class="muted small">${t('tip')}</p></div>`;
     openSheetKeep(t('routeTitle',fmtDist(r.dist)),h);
     $('sheet').classList.remove('collapsed'); $('sheet').classList.toggle('full',!!S.full); $('sheetToggle').textContent=S.full?'▾':'▴';
+  }else if(S.view==='place'){
+    const p=S.place, d=S.me?hav([S.me.lat,S.me.lng],[p.lat,p.lng]):null;
+    let h=d!=null?`<p class="muted" style="margin:0 0 4px">${t('fromYou',fmtDist(d))}</p>`:'';
+    h+=`<div class="btns"><button class="btn go" data-act="pto">${t('routeHere')}</button><button class="btn sec" data-act="pfrom">${t('fromHere')}</button></div>`;
+    h+=`<div class="btns">${S.to&&S.routes.length?`<button class="btn sec" data-act="pvia">${t('addVia')}</button>`:''}<button class="btn sec" data-act="phome">${t('saveHome')}</button><button class="btn sec" data-act="pwork">${t('saveWork')}</button></div>`;
+    h+=`<div class="btns"><button class="btn sec" data-act="${S.placeBack?'pback':'pclose'}">${t(S.placeBack?'back':'close')}</button></div>`;
+    openSheetKeep(labelOf(p),h);
   }else if(S.view==='trail'){
     const r=S.routes[0], m=trailKV(S.trailMeta||{},r); let h='';
     h+=`<p style="margin:2px 0 6px">${summaryLine(r)} <span class="muted small">${t('estTime')}</span> ${gradeTag(r)}</p>`;
@@ -1148,6 +1177,7 @@ $('sheetBody').addEventListener('click',e=>{
   const tr=e.target.closest('[data-trail]'); if(tr){loadTrail(S.trails[+tr.dataset.trail]);return;}
   const b=e.target.closest('[data-act]'); if(!b)return; const a=b.dataset.act;
   if(a==='more'){setFull(!S.full);return;}
+  if(/^p(to|from|via|home|work|back|close)$/.test(a)){placeAct(a);return;}
   if(a==='go')startNav(false); else if(a==='gpx')exportGPX(); else if(a==='retry')computeRoutes();
   else if(a==='backlist'){S.view='trails';S.routes=[];drawRoutes();render();}
   else if(a==='closesheet')closeSheet();
@@ -1440,12 +1470,11 @@ $('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();})
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 $('modalAccept').onclick=()=>{store.set({terms:TERMS_VER});consent=false;$('modal').classList.remove('open','consent');};
 function switchLang(){ttsLang=null;ttsWarned=false;LANG=LANG==='he'?'en':'he';store.set({lang:LANG});applyLang();}
-$('modalLang').onclick=switchLang; $('fabLang').onclick=switchLang;
+$('modalLang').onclick=switchLang;
 document.addEventListener('click',e=>{if(e.target.id==='credit'){e.preventDefault();openModal('about');}});
 
 /* ---------- כפתורים ותפריטים ---------- */
 $('fabLocate').onclick=()=>{locateOnce(true).catch(()=>{});};
-$('fabTrails').onclick=showTrails;
 const togglePop=id=>{document.querySelectorAll('.pop').forEach(p=>p.classList.toggle('open',p.id===id&&!p.classList.contains('open')));};
 $('fabLayers').onclick=()=>togglePop('popLayers'); $('fabMenu').onclick=()=>togglePop('popMenu');
 $('popMenu').addEventListener('click',e=>{const b=e.target.closest('[data-menu]');if(!b)return;const m=b.dataset.menu;
