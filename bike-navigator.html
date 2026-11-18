@@ -17,7 +17,7 @@
   --c-bike:#0a9d58; --c-lane:#12a5a5; --c-quiet:#2f7fe0; --c-medium:#e0a100; --c-busy:#d9362b;
   --c-trail:#8a5a2b; --c-foot:#8e5bd0; --c-other:#7a8580; --c-alt:#7d8890;
   --sf-paved:#5b6b7a; --sf-gravel:#c79a4b; --sf-dirt:#8a5a2b; --sf-unk:#b8c0bc;
-  --radius:14px; --scrim:rgba(0,0,0,.5);
+  --radius:14px; --scrim:rgba(0,0,0,.5); --rec:#d6336c;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -26,7 +26,7 @@
     --shadow:0 4px 18px rgba(0,0,0,.55); --casing:#0e1311; --me:#6aa9ff;
     --c-bike:#2fd07f; --c-lane:#35cfcf; --c-quiet:#6aa9ff; --c-medium:#ffc233; --c-busy:#ff6257;
     --c-trail:#c48a52; --c-foot:#b68cf0; --c-other:#9aa5a0; --c-alt:#8b969d;
-    --sf-paved:#8fa1b3; --sf-gravel:#dab36a; --sf-dirt:#b07a45; --sf-unk:#55615b;
+    --sf-paved:#8fa1b3; --sf-gravel:#dab36a; --sf-dirt:#b07a45; --sf-unk:#55615b; --rec:#ff6b9a;
   }
 }
 :root[data-theme="dark"]{
@@ -35,7 +35,7 @@
   --shadow:0 4px 18px rgba(0,0,0,.55); --casing:#0e1311; --me:#6aa9ff;
   --c-bike:#2fd07f; --c-lane:#35cfcf; --c-quiet:#6aa9ff; --c-medium:#ffc233; --c-busy:#ff6257;
   --c-trail:#c48a52; --c-foot:#b68cf0; --c-other:#9aa5a0; --c-alt:#8b969d;
-  --sf-paved:#8fa1b3; --sf-gravel:#dab36a; --sf-dirt:#b07a45; --sf-unk:#55615b;
+  --sf-paved:#8fa1b3; --sf-gravel:#dab36a; --sf-dirt:#b07a45; --sf-unk:#55615b; --rec:#ff6b9a;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
@@ -128,6 +128,25 @@ body:not(.od) #rowFrom,body:not(.od) #btnSwap{display:none}
 /* night map: tiles are inverted and hue-rotated back, so roads stay recognisable; route lines and markers are in other panes and keep their colours */
 body.night .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.85)}
 path.turnpt{stroke:var(--casing);fill:var(--accent);fill-opacity:.95}
+/* track recording for OSM mapping */
+path.recline{stroke:var(--rec);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;fill:none}
+path.recmk{stroke:var(--casing);fill:var(--rec);fill-opacity:1}
+#fabRec{display:none;border-color:var(--rec)}
+body.rec #fabRec{display:grid}
+#fabRec i,.recdot{display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--rec);animation:recblink 1.4s ease-in-out infinite}
+.recdot{width:10px;height:10px;margin-inline-end:4px}
+body.recp #fabRec i,body.recp .recdot{animation:none;border-radius:3px;opacity:.6}
+@keyframes recblink{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){#fabRec i,.recdot{animation:none}}
+#popRec{width:300px}
+#popRec h4 b{font-weight:600;color:var(--text);margin-inline-start:6px}
+.mkgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mkgrid button{border:1px solid var(--border);background:var(--surface2);border-radius:10px;padding:11px 6px;font-size:13.5px;line-height:1.2}
+a.btn{text-decoration:none;text-align:center}
+label.chk{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;margin:8px 0}
+details.how{font-size:13.5px;margin:6px 0}
+details.how summary{cursor:pointer;font-weight:600;color:var(--accent);padding:4px 0}
+details.how ol{padding-inline-start:20px;margin:6px 0}
 h3.sec{font-size:13px;color:var(--muted);margin:12px 0 5px;font-weight:600}
 .bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--surface2)}
 .bar i{display:block;height:100%}
@@ -255,6 +274,7 @@ body.pov #povAttr a{color:var(--muted)}
 
 <!-- floating buttons -->
 <div id="fabs">
+  <button class="fab" id="fabRec" data-i18n-title="recBtn"><i></i></button>
   <button class="fab only-nav" id="fabPov" data-i18n-title="povBtn"><b id="fabPovTxt"></b></button>
   <button class="fab only-nav" id="btnMute" data-i18n-title="voiceBtn"><svg id="muteIco" viewBox="0 0 24 24"></svg></button>
   <button class="fab hide-nav" id="fabLocate" data-i18n-title="myLoc"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
@@ -266,10 +286,13 @@ body.pov #povAttr a{color:var(--muted)}
   <h4 data-i18n="overH"></h4><div id="overList"></div>
 </div>
 <div class="pop card" id="popRide"></div>
+<div class="pop card" id="popRec"></div>
 <div class="pop card" id="popMenu">
   <button class="item" data-menu="lang"><span data-i18n="mLang"></span> <b id="langState"></b></button>
   <button class="item" data-menu="gpxin" data-i18n="mGpxIn"></button>
   <button class="item" data-menu="gpxout" data-i18n="mGpxOut"></button>
+  <button class="item" data-menu="rec" data-i18n="mRec"></button>
+  <button class="item" data-menu="recs" data-i18n="mRecs"></button>
   <button class="item" data-menu="sim" data-i18n="mSim"></button>
   <button class="item" data-menu="voice"><span data-i18n="mVoice"></span> <b id="voiceState"></b></button>
   <button class="item" data-menu="theme"><span data-i18n="mTheme"></span> <b id="themeState"></b></button>
@@ -327,7 +350,20 @@ he:{
   phFrom:'מוצא (ברירת מחדל: המיקום שלי)',phTo:'לאן רוכבים?',clear:'ניקוי',swap:'החלפת מוצא ויעד',myLoc:'המיקום שלי',mapPoint:'נקודה במפה',
   trailsBtn:'מסלולי אופניים באזור',layers:'שכבות מפה',menu:'תפריט',baseH:'מפת בסיס',overH:'שכבות מסלולים מסומנים',
   'b.cyclosm':'מפת אופניים (CyclOSM)','b.osm':'מפה רגילה (OSM)','b.topo':'טופוגרפית (OpenTopoMap)','o.cycling':'מסלולי אופניים מסומנים','o.mtb':'מסלולי שטח (MTB) מסומנים',
-  mLang:'שפה:',langName:'עברית',mGpxIn:'ייבוא מסלול מקובץ GPX',mGpxOut:'ייצוא המסלול הנוכחי ל-GPX',mSim:'סימולציית רכיבה (לבדיקה)',mVoice:'הנחיות קוליות:',on:'פעילות',off:'כבויות',
+  mLang:'שפה:',langName:'עברית',mGpxIn:'ייבוא מסלול מקובץ GPX',mGpxOut:'ייצוא המסלול הנוכחי ל-GPX',mSim:'סימולציית רכיבה (לבדיקה)',
+  mRec:'● הקלטת מסלול למיפוי (OSM)',mRecs:'ההקלטות שלי',recBtn:'הקלטה פעילה – סימון / סיום',recStart:'התחלת הקלטה',
+  recOn:'ההקלטה התחילה. לסימון שביל חסר, משטח או מכשול – הכפתור האדום ●',recH:'מקליט',recPaused:'מושהה',recStat:'{0} · {1}',
+  recWeak:'קליטת GPS חלשה – נקודות לא מדויקות אינן נשמרות',recMarkH:'סימון במקום הנוכחי',recPause:'השהיה',recResume:'המשך',recStop:'סיום ושמירה',
+  recMarked:'סומן: {0}',recNoFix:'עדיין אין מיקום GPS',recSaved:'ההקלטה נשמרה',recShort:'ההקלטה קצרה מדי ולא נשמרה',
+  recRecovered:'הקלטה שנקטעה נשמרה ב"ההקלטות שלי"',recFull:'אין מקום לשמירת ההקלטה – מחקו הקלטות ישנות',recTooShort:'אחרי הסתרת ההתחלה והסוף לא נשאר מסלול לייצוא',
+  'mk.cwStart':'תחילת שביל אופניים','mk.cwEnd':'סוף שביל אופניים','mk.lane':'נתיב אופניים בכביש','mk.shared':'שביל משותף להולכי רגל',
+  'mk.paved':'משטח סלול','mk.gravel':'משטח חצץ','mk.dirt':'משטח עפר','mk.crossing':'מעבר אופניים','mk.barrier':'מחסום / שער','mk.steps':'מדרגות','mk.problem':'בעיה / חסימה',
+  recsNone:'עדיין אין הקלטות.',recsNote:'ההקלטות נשמרות במכשיר בלבד. מהן אפשר להפיק קובץ GPX בפורמט שמתאים להעלאה ל-OpenStreetMap.',recLive:'הקלטה פעילה כרגע – לסיום, הכפתור האדום ●',
+  recMk:'{0} סימונים',recT:'הקלטה {0}',rDist:'מרחק',rDur:'משך',rPts:'נקודות GPS',rMarks:'סימונים',recNoMarks:'אין',
+  recTrim:'הסתרת 200 מ׳ בתחילה ובסוף (פרטיות – למשל ליד הבית)',recExp:'ייצוא GPX למיפוי',recUp:'העלאה ל-OSM',recEdit:'עריכה במפה (iD)',
+  recDel:'מחיקה',recDelQ:'למחוק את ההקלטה?',recDelYes:'מחיקה',recDelNo:'ביטול',recGpxName:'סקר תשתית אופניים {0}',recGpxDesc:'סקר תשתית אופניים – הוקלט ב-BikeNavigator',
+  recHowH:'איך מוסיפים את זה ל-OSM?',
+  recHow:'<ol><li>ייצאו את ההקלטה לקובץ GPX (הכפתור למעלה) ושמרו אותו.</li><li>היכנסו ל-openstreetmap.org עם חשבון OSM חינמי ובחרו "העלאה ל-OSM" (עקבות GPS). מלאו תיאור ותגיות ובחרו נראות "ניתנת לזיהוי" (Identifiable), כדי שממפים אחרים יוכלו להיעזר בה.</li><li>פתחו את העורך iD באזור, טענו את הקובץ דרך "נתוני מפה" (Map Data) ← "נתוני מפה מותאמים" (Custom Map Data), וציירו את השביל לאורך הקו. הסימונים מופיעים כנקודות, והתגיות המוצעות כתובות בתיאור שלהן.</li></ol><p class="muted small">OSM אינו מקבל יצירה אוטומטית של דרכים מהקלטות: כל שינוי במפה נעשה ונבדק בידי ממפה. ודאו בשטח או בתצלום אוויר לפני שמוסיפים. התרומה כפופה לתנאי OSM ולרישיון ODbL.</p>',mVoice:'הנחיות קוליות:',on:'פעילות',off:'כבויות',
   mTheme:'ערכת צבעים:','th.auto':'אוטומטי (כהה בלילה)','th.light':'בהיר','th.dark':'כהה',mAbout:'אודות, תנאי שימוש ופרטיות',
   nvRem:'נותרו',nvEta:'שעת הגעה',nvKmh:'קמ״ש',nvStop:'סיום ניווט',nvCenter:'מרכוז',
   geoDenied:'אין הרשאת מיקום. יש לאשר לאפליקציה גישה למיקום.',geoFail:'לא ניתן לקבל מיקום. ודאו שה-GPS פעיל.',
@@ -392,7 +428,7 @@ he:{
   'legal.privacy':`<p class="muted small">עדכון אחרון: נובמבר 2026</p>
 <p>האפליקציה אינה דורשת הרשמה. בעל האפליקציה אינו אוסף, אינו שומר ואינו מעביר מידע אישי על המשתמשים. לאפליקציה אין שרת משלה, ואין בה פרסומות או כלי מעקב וניתוח.</p>
 <h4>מיקום</h4>
-<p>המיקום שלכם משמש להצגתו על המפה ולניווט, ומעובד במכשיר שלכם. הוא אינו נשמר ואינו נשלח לבעל האפליקציה.</p>
+<p>המיקום שלכם משמש להצגתו על המפה ולניווט, ומעובד במכשיר שלכם. הוא אינו נשלח לבעל האפליקציה, ואינו נשמר – אלא אם הפעלתם הקלטת מסלול: אז המסלול המוקלט נשמר במכשיר בלבד עד שתמחקו אותו, ויוצא ממנו רק אם תבחרו לייצא או לשתף אותו (למשל להעלאה ל-OpenStreetMap, שבה עקבות GPS עשויים להיות פומביים לפי הנראות שתבחרו).</p>
 <h4>מידע שנשלח לשירותי צד שלישי</h4>
 <p>כדי לפעול, האפליקציה פונה ישירות מהמכשיר שלכם לשירותים חיצוניים:</p>
 <ul>
@@ -403,7 +439,7 @@ he:{
 </ul>
 <p>בכל פנייה כזו השירות נחשף גם לכתובת ה-IP של המכשיר. לשירותים אלה מדיניות פרטיות משלהם, ולבעל האפליקציה אין שליטה עליהם.</p>
 <h4>מידע שנשמר במכשיר</h4>
-<p>ההעדפות שלכם, המקומות ששמרתם (בית, עבודה) והיעדים האחרונים (שפה, ערכת צבעים, סגנון רכיבה, סוג האופניים, תלילות המסלול, סימון הרוכב ותצוגת הניווט, שכבות מפה, מצב ההנחיות הקוליות, תצוגת המפה האחרונה ואישור תנאי השימוש) נשמרות במכשיר בלבד. ניתן למחוק אותן בניקוי נתוני האפליקציה או הדפדפן. קובצי GPX שתייבאו מעובדים במכשיר בלבד.</p>
+<p>ההעדפות שלכם, המקומות ששמרתם (בית, עבודה) והיעדים האחרונים (שפה, ערכת צבעים, סגנון רכיבה, סוג האופניים, תלילות המסלול, סימון הרוכב ותצוגת הניווט, שכבות מפה, מצב ההנחיות הקוליות, תצוגת המפה האחרונה ואישור תנאי השימוש) נשמרות במכשיר בלבד. ניתן למחוק אותן בניקוי נתוני האפליקציה או הדפדפן. קובצי GPX שתייבאו מעובדים במכשיר בלבד. הקלטות מסלול (נקודות GPS עם זמנים, וסימונים שהוספתם) נשמרות במכשיר בלבד עד שתמחקו אותן.</p>
 <h4>הרשאות</h4>
 <p>מיקום – לצורך ניווט; גישה לרשת – לטעינת מפות ומסלולים. ההנחיות הקוליות מופקות בידי מנוע ההקראה של המכשיר.</p>`,
   'legal.a11y':`<p class="muted small">עדכון אחרון: נובמבר 2026</p>
@@ -451,7 +487,20 @@ en:{
   phFrom:'From (default: my location)',phTo:'Where to?',clear:'Clear',swap:'Swap start and destination',myLoc:'My location',mapPoint:'Point on map',
   trailsBtn:'Bike routes nearby',layers:'Map layers',menu:'Menu',baseH:'Base map',overH:'Marked-route overlays',
   'b.cyclosm':'Cycling map (CyclOSM)','b.osm':'Standard map (OSM)','b.topo':'Topographic (OpenTopoMap)','o.cycling':'Marked cycling routes','o.mtb':'Marked MTB routes',
-  mLang:'Language:',langName:'English',mGpxIn:'Import route from GPX file',mGpxOut:'Export current route to GPX',mSim:'Ride simulation (for testing)',mVoice:'Voice guidance:',on:'On',off:'Off',
+  mLang:'Language:',langName:'English',mGpxIn:'Import route from GPX file',mGpxOut:'Export current route to GPX',mSim:'Ride simulation (for testing)',
+  mRec:'● Record a ride for mapping (OSM)',mRecs:'My recordings',recBtn:'Recording – mark / finish',recStart:'Start recording',
+  recOn:'Recording started. To mark a missing path, surface or obstacle – the red ● button',recH:'Recording',recPaused:'Paused',recStat:'{0} · {1}',
+  recWeak:'Weak GPS – inaccurate points are not saved',recMarkH:'Mark at current position',recPause:'Pause',recResume:'Resume',recStop:'Finish and save',
+  recMarked:'Marked: {0}',recNoFix:'No GPS position yet',recSaved:'Recording saved',recShort:'The recording was too short and was not saved',
+  recRecovered:'An interrupted recording was saved in "My recordings"',recFull:'No room to save the recording – delete old recordings',recTooShort:'After hiding the start and end there is no track left to export',
+  'mk.cwStart':'Cycleway starts','mk.cwEnd':'Cycleway ends','mk.lane':'Painted bike lane','mk.shared':'Path shared with pedestrians',
+  'mk.paved':'Paved surface','mk.gravel':'Gravel surface','mk.dirt':'Dirt surface','mk.crossing':'Bike crossing','mk.barrier':'Barrier / gate','mk.steps':'Steps','mk.problem':'Problem / blocked',
+  recsNone:'No recordings yet.',recsNote:'Recordings are stored on your device only. They can be exported as a GPX file in a format suited for uploading to OpenStreetMap.',recLive:'A recording is running – to finish, the red ● button',
+  recMk:'{0} marks',recT:'Recording {0}',rDist:'Distance',rDur:'Duration',rPts:'GPS points',rMarks:'Marks',recNoMarks:'None',
+  recTrim:'Hide 200 m at the start and end (privacy – e.g. near home)',recExp:'Export GPX for mapping',recUp:'Upload to OSM',recEdit:'Edit the map (iD)',
+  recDel:'Delete',recDelQ:'Delete this recording?',recDelYes:'Delete',recDelNo:'Cancel',recGpxName:'Bicycle infrastructure survey {0}',recGpxDesc:'Bicycle infrastructure survey – recorded with BikeNavigator',
+  recHowH:'How do I add this to OSM?',
+  recHow:'<ol><li>Export the recording to a GPX file (button above) and save it.</li><li>Sign in to openstreetmap.org with a free OSM account and choose "Upload to OSM" (GPS traces). Fill in a description and tags, and choose the "Identifiable" visibility so other mappers can use it.</li><li>Open the iD editor in the area, load the file via Map Data → Custom Map Data, and draw the path along the line. Marks appear as points, with the suggested tags in their description.</li></ol><p class="muted small">OSM does not accept ways created automatically from recordings: every change to the map is made and checked by a mapper. Verify on the ground or on aerial imagery before adding. Contributions are subject to the OSM terms and the ODbL licence.</p>',mVoice:'Voice guidance:',on:'On',off:'Off',
   mTheme:'Theme:','th.auto':'Auto (dark at night)','th.light':'Light','th.dark':'Dark',mAbout:'About, terms & privacy',
   nvRem:'Remaining',nvEta:'Arrival',nvKmh:'km/h',nvStop:'End navigation',nvCenter:'Re-center',
   geoDenied:'Location permission denied. Please allow the app to access your location.',geoFail:'Unable to get your location. Make sure GPS is on.',
@@ -516,7 +565,7 @@ en:{
   'legal.privacy':`<p class="muted small">Last updated: November 2026</p>
 <p>The App requires no registration. The owner of the App does not collect, store or share personal information about users. The App has no server of its own, and contains no advertising, tracking or analytics tools.</p>
 <h4>Location</h4>
-<p>Your location is used to show it on the map and for navigation, and is processed on your device. It is not stored and is not sent to the owner of the App.</p>
+<p>Your location is used to show it on the map and for navigation, and is processed on your device. It is not sent to the owner of the App, and is not stored – unless you start a track recording: the recorded track is then stored on your device only until you delete it, and leaves it only if you choose to export or share it (for example to upload to OpenStreetMap, where GPS traces may be public depending on the visibility you choose).</p>
 <h4>Information sent to third-party services</h4>
 <p>To work, the App contacts external services directly from your device:</p>
 <ul>
@@ -527,7 +576,7 @@ en:{
 </ul>
 <p>With every such request the service also sees your device's IP address. These services have their own privacy policies, and the owner of the App has no control over them.</p>
 <h4>Information stored on your device</h4>
-<p>Your preferences, the places you saved (home, work) and your recent destinations (language, theme, riding style, bike type, route steepness, rider marker and navigation view, map layers, voice guidance setting, last map view and acceptance of the Terms of Use) are stored on your device only. You can delete them by clearing the app's or browser's data. GPX files you import are processed on your device only.</p>
+<p>Your preferences, the places you saved (home, work) and your recent destinations (language, theme, riding style, bike type, route steepness, rider marker and navigation view, map layers, voice guidance setting, last map view and acceptance of the Terms of Use) are stored on your device only. You can delete them by clearing the app's or browser's data. GPX files you import are processed on your device only. Track recordings (GPS points with times, and marks you added) are stored on your device only until you delete them.</p>
 <h4>Permissions</h4>
 <p>Location – for navigation; network access – to load maps and routes. Voice guidance is produced by your device's text-to-speech engine.</p>`,
   'legal.a11y':`<p class="muted small">Last updated: November 2026</p>
@@ -806,6 +855,42 @@ function parseGPX(xmlText,Parser){
   const r=finalizeRoute({source:'gpx',name:nm&&nm.textContent.trim()?nm.textContent.trim():null,coords,segs:[],isTrack:true,trackStart:0,kmh:15});
   r.hints=hintsFromGeometry(r); return r;
 }
+/* ---------- הקלטת מסלול למיפוי ב-OSM ----------
+   rec = {t0 (ms), segs:[[[lat,lng,ele|null,sec-from-t0]]], marks:[{la,ln,t,k}]}
+   הסימונים הם הצעת תגיות לממפה (נכתבות ב-<desc> של ה-wpt) – שום דבר לא נשלח אוטומטית ל-OSM */
+const MARKS=[
+  {k:'cwStart',tags:'highway=cycleway'},{k:'cwEnd',tags:'highway=cycleway (end)'},
+  {k:'lane',tags:'cycleway=lane'},{k:'shared',tags:'highway=path + bicycle=designated + foot=designated + segregated=no'},
+  {k:'paved',tags:'surface=asphalt'},{k:'gravel',tags:'surface=gravel'},{k:'dirt',tags:'surface=ground'},
+  {k:'crossing',tags:'highway=crossing + bicycle=yes'},{k:'barrier',tags:'barrier=gate'},{k:'steps',tags:'highway=steps'},
+  {k:'problem',tags:'fixme=*'}];
+function recStats(rec){
+  let dist=0,n=0,a=null,b=null;
+  rec.segs.forEach(s=>s.forEach((p,i)=>{if(i)dist+=hav(s[i-1],p);n++;if(a==null)a=p[3];b=p[3];}));
+  return{dist:Math.round(dist),n,dur:a==null?0:b-a};
+}
+/* פרטיות: מוריד את m המטרים הראשונים והאחרונים (למשל ליד הבית) ואת הסימונים שנעשו בזמן הזה */
+function recTrim(rec,m){
+  const fl=[]; let tot=0;
+  rec.segs.forEach((s,si)=>s.forEach((p,i)=>{if(i)tot+=hav(s[i-1],p);fl.push({p,si,a:tot});}));
+  const keep=m?fl.filter(x=>x.a>=m&&x.a<=tot-m):fl, segs=[]; let cur=null,last=-1;
+  keep.forEach(x=>{if(x.si!==last){cur=[];segs.push(cur);last=x.si;}cur.push(x.p);});
+  const t1=keep.length?keep[0].p[3]:0, t2=keep.length?keep[keep.length-1].p[3]:-1;
+  return{t0:rec.t0,segs:segs.filter(s=>s.length>1),marks:(rec.marks||[]).filter(k=>!m||(k.t>=t1&&k.t<=t2))};
+}
+/* GPX 1.1 כפי ש-OSM מצפה לו בהעלאת עקבות: כל נקודה עם <time> (בלי זמנים OSM לא מציג את העקבות כ"ניתנים לזיהוי"), מקטע חדש אחרי הפסקה */
+function recGPX(rec,o){
+  const esc=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+  const iso=s=>new Date(rec.t0+s*1000).toISOString().replace(/\.\d{3}Z$/,'Z');
+  const pt=p=>'<trkpt lat="'+p[0].toFixed(6)+'" lon="'+p[1].toFixed(6)+'">'+(p[2]!=null?'<ele>'+p[2]+'</ele>':'')+'<time>'+iso(p[3])+'</time></trkpt>';
+  const wpt=k=>{const m=MARKS.find(x=>x.k===k.k)||{tags:''};
+    return'<wpt lat="'+k.la.toFixed(6)+'" lon="'+k.ln.toFixed(6)+'"><time>'+iso(k.t)+'</time><name>'+esc(o.label(k.k))+'</name><desc>'+esc('OSM: '+m.tags)+'</desc><type>survey</type></wpt>';};
+  const st=rec.segs.length?rec.segs[0][0][3]:0;
+  return'<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="BikeNavigator" xmlns="http://www.topografix.com/GPX/1/1">\n'+
+    '<metadata><name>'+esc(o.name)+'</name><desc>'+esc(o.desc||'')+'</desc><time>'+iso(st)+'</time></metadata>\n'+
+    rec.marks.map(wpt).map(s=>s+'\n').join('')+
+    '<trk><name>'+esc(o.name)+'</name><type>cycling</type>\n'+rec.segs.map(s=>'<trkseg>\n'+s.map(pt).join('\n')+'\n</trkseg>').join('\n')+'\n</trk>\n</gpx>\n';
+}
 function toGPX(r,name){
   const esc=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
   return'<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="BikeNavigator" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>'+esc(name)+'</name><trkseg>\n'+
@@ -814,7 +899,7 @@ function toGPX(r,name){
 function fmtDist(m){return m<950?Math.max(10,Math.round(m/10)*10)+' '+t('u.m'):(m<20000?(m/1000).toFixed(1):Math.round(m/1000))+' '+t('u.km');}
 function fmtTime(s){const m=Math.max(1,Math.round(s/60));return m<60?m+' '+t('u.min'):Math.floor(m/60)+':'+String(m%60).padStart(2,'0')+' '+t('u.h');}
 /* ===================== /CORE ===================== */
-if(typeof module!=='undefined'){module.exports={sunAlt,setSpeaking:v=>{SPEAKING=v;},steepRuns,BIKES,setBike:b=>{BIKE=b;},rideTime,maxGradeOf,I18N,t,setLang:l=>{LANG=l;},hintText,parseBRouter,finalizeRoute,project,pointAt,sliceRoute,concatRoutes,buildTrail,hintsFromGeometry,toGPX,classify,surfGroup,fmtDist,fmtTime,parseOSRM};}
+if(typeof module!=='undefined'){module.exports={MARKS,recStats,recTrim,recGPX,parseGPX,sunAlt,setSpeaking:v=>{SPEAKING=v;},steepRuns,BIKES,setBike:b=>{BIKE=b;},rideTime,maxGradeOf,I18N,t,setLang:l=>{LANG=l;},hintText,parseBRouter,finalizeRoute,project,pointAt,sliceRoute,concatRoutes,buildTrail,hintsFromGeometry,toGPX,classify,surfGroup,fmtDist,fmtTime,parseOSRM};}
 else (function(){
 /* ===================== APP ===================== */
 const $=id=>document.getElementById(id);
@@ -825,7 +910,7 @@ LANG=saved.lang==='he'||saved.lang==='en'?saved.lang:(/^(he|iw)/i.test(navigator
 const S={from:null,to:null,vias:[],profile:saved.profile||'trekking',routes:[],active:0,view:'',tok:0,nav:null,sim:null,
   voice:saved.voice===false||saved.voice==='off'?'off':saved.voice==='alerts'?'alerts':'on',theme:saved.theme||'auto',me:null,trails:[],trailMeta:null,picked:false,full:false,place:null,placeBack:'',
   places:saved.places&&typeof saved.places==='object'?saved.places:{},recent:Array.isArray(saved.recent)?saved.recent:[],
-  bike:BIKES[saved.bike]?saved.bike:'mech',hill:HILLS.includes(saved.hill)?saved.hill:'mid',icon:saved.icon||null,pov:saved.pov!==false,hd:null};
+  bike:BIKES[saved.bike]?saved.bike:'mech',hill:HILLS.includes(saved.hill)?saved.hill:'mid',icon:saved.icon||null,pov:saved.pov!==false,hd:null,rec:null,recSel:null,recDel:false,recFit:null,recTrim:saved.recTrim!==false};
 BIKE=S.bike;
 /* סימון הרוכב: אייקון לפי סוג האופניים, אלא אם נבחר חץ/נקודה */
 const ICONS={
@@ -919,6 +1004,7 @@ map.on('moveend',()=>{const c=map.getCenter();store.set({view:[c.lat,c.lng,map.g
 
 if(darkMQ&&darkMQ.addEventListener)darkMQ.addEventListener('change',()=>applyTheme());
 const turnLayer=L.layerGroup().addTo(map); // סימון נקודת הפנייה הבאה בניווט
+const recShow=L.layerGroup().addTo(map), recLayer=L.layerGroup().addTo(map); // הקלטה שמורה מוצגת / הקלטה פעילה
 const routeLayer=L.layerGroup().addTo(map), markLayer=L.layerGroup().addTo(map), meLayer=L.layerGroup().addTo(map);
 const pin=(cls,txt)=>L.divIcon({className:'',html:`<div class="pin ${cls}"><span>${txt}</span></div>`,iconSize:[26,26],iconAnchor:[13,26]});
 
@@ -1070,7 +1156,7 @@ map.on('click',e=>{
   if(S.sim&&S.nav){S.sim.hold={lat:e.latlng.lat,lng:e.latlng.lng};toast(t('simDev'));return;}
   if(S.nav)return; mapMenu(e.latlng);});
 map.on('contextmenu',e=>{if(!S.nav)mapMenu(e.latlng);});
-map.on('dragstart',()=>{if(S.nav){setFollow(false);clearTimeout(overT);}});
+map.on('dragstart',()=>{if(S.rec)S.rec.free=true; if(S.nav){setFollow(false);clearTimeout(overT);}});
 
 /* ---------- חישוב מסלול ---------- */
 function chipClick(e){const b=e.target.closest('.chip');if(!b||(!b.dataset.p&&!b.classList.contains('chipRide')))return false;
@@ -1130,7 +1216,7 @@ function selectRoute(k){S.picked=true;S.active=k;drawRoutes();render();}
 /* body.plan = מתכננים מסלול ליעד: סוג המסלול מוצג בראש הגיליון במקום בכרטיס החיפוש */
 const syncPlan=()=>{const c=document.body.classList;c.toggle('plan',!!S.to&&S.view!=='trail'&&S.view!=='trails');c.toggle('od',!!S.to||!!(S.from&&!S.from.isMe));};
 function openSheet(title,html){$('sheetTitle').textContent=title;$('sheetBody').innerHTML=html;$('sheet').classList.add('open');$('sheet').classList.remove('collapsed','full');$('sheetToggle').textContent='▾';syncPlan();}
-function closeSheet(){$('sheet').classList.remove('open');S.view='';syncPlan();}
+function closeSheet(){$('sheet').classList.remove('open');S.view='';recShow.clearLayers();syncPlan();}
 /* בבחירת מסלול הגיליון נפתח מקוצר; S.full מרחיב אותו לפירוט המלא */
 function setFull(v){S.full=v;if(S.view==='routes')render();}
 new ResizeObserver(()=>document.body.style.setProperty('--sheetH',$('sheet').offsetHeight+'px')).observe($('sheet')); // לפריסת הכפתורים הצפים
@@ -1197,7 +1283,13 @@ function render(){
       :`<p class="muted">${t('noTrails')}</p>`;
     h+=`<p class="muted small">${t('trailSrc')}</p>`;
     openSheetKeep(t('trailsBtn'),h);
+  }else if(S.view==='recs'){
+    recShow.clearLayers(); openSheetKeep(t('mRecs'),recsHTML());
+  }else if(S.view==='rec'){
+    const R=recLoad(S.recSel); if(!R){S.view='recs';render();return;}
+    openSheetKeep(t('recT',fmtDate(R.t0)),recHTML(R)); drawRecShow(R);
   }
+  if(S.view!=='rec'&&S.view!=='recs')recShow.clearLayers();
 }
 function openSheetKeep(title,html){const col=$('sheet').classList.contains('collapsed')&&$('sheet').classList.contains('open');const sc=$('sheetBody').scrollTop;openSheet(title,html);if(col){$('sheet').classList.add('collapsed');$('sheetToggle').textContent='▴';}$('sheetBody').scrollTop=sc;}
 
@@ -1205,15 +1297,20 @@ $('sheetBody').addEventListener('click',e=>{
   if(chipClick(e))return;
   const rt=e.target.closest('[data-route]'); if(rt){selectRoute(+rt.dataset.route);return;}
   const tr=e.target.closest('[data-trail]'); if(tr){loadTrail(S.trails[+tr.dataset.trail]);return;}
+  const rc=e.target.closest('[data-rec]'); if(rc){openRec(rc.dataset.rec);return;}
   const b=e.target.closest('[data-act]'); if(!b)return; const a=b.dataset.act;
   if(a==='more'){setFull(!S.full);return;}
   if(/^p(to|from|via|home|work|back|close)$/.test(a)){placeAct(a);return;}
   if(a==='go')startNav(false); else if(a==='gpx')exportGPX(); else if(a==='retry')computeRoutes();
   else if(a==='backlist'){S.view='trails';S.routes=[];drawRoutes();render();}
   else if(a==='closesheet')closeSheet();
+  else if(a==='recexp')recExport(); else if(a==='recstart')startRec(); else if(a==='recs'){S.view='recs';render();}
+  else if(a==='recdel'||a==='recdelno'){S.recDel=a==='recdel';render();}
+  else if(a==='recdel2'){recRemove(S.recSel);S.view='recs';render();}
   else if(a==='trailsearch')searchTrails($('trailQ').value.trim());
   else if(a==='tostart'){const r=S.routes[0],c=r.coords[0];S.vias=[];S.from=null;$('inFrom').value='';setPoint('to',{lat:c[0],lng:c[1],label:t('startOf',r.name||t('route'))});}
 });
+$('sheetBody').addEventListener('change',e=>{if(e.target.id==='recTrim'){S.recTrim=e.target.checked;store.set({recTrim:S.recTrim});}});
 $('sheetBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='trailQ')searchTrails(e.target.value.trim());});
 
 /* ---------- מסלולים קהילתיים ---------- */
@@ -1278,17 +1375,133 @@ async function loadTrail(x){
 /* ---------- GPX ---------- */
 async function exportGPX(){
   const r=S.routes[S.active]; if(!r){toast(t('noExport'));return;}
-  const name=r.name||(t('gpxDefault')+' '+new Date().toLocaleDateString(LANG==='he'?'he-IL':'en-GB')), gpx=toGPX(r,name), P=NAT();
+  const name=r.name||(t('gpxDefault')+' '+new Date().toLocaleDateString(LANG==='he'?'he-IL':'en-GB'));
+  shareFile('bike-route.gpx',name,toGPX(r,name));
+}
+async function shareFile(fname,title,text){
+  const P=NAT();
   if(P&&P.Filesystem&&P.Share){ // באפליקציה: שמירה לקובץ זמני ושיתוף
-    try{const w=await P.Filesystem.writeFile({path:'bike-route.gpx',data:gpx,directory:'CACHE',encoding:'utf8'});await P.Share.share({title:name,url:w.uri});}catch(e){}
+    try{const w=await P.Filesystem.writeFile({path:fname,data:text,directory:'CACHE',encoding:'utf8'});await P.Share.share({title,url:w.uri});}catch(e){}
     return;
   }
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([gpx],{type:'application/gpx+xml'}));a.download='bike-route.gpx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/gpx+xml'}));a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
 }
 $('gpxFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
   try{const r=parseGPX(await f.text(),DOMParser);S.tok++;S.trails=[];S.trailMeta={gpx:f.name};
     S.routes=[r];S.active=0;S.view='trail';S.to=null;S.vias=[];$('inTo').value='';drawMarkers();drawRoutes();render();fitRoute(r);}
   catch(err){toast(t('gpxBad'));}};
+
+/* ---------- הקלטת מסלול למיפוי (OSM) ----------
+   כל הקלטה במפתח משלה ('bikenav.rec.<id>') + אינדקס ('bikenav.recs'). ההקלטה הפעילה נשמרת כל 10 נקודות / 15 שנ׳,
+   כך שהיא שורדת סגירה של האפליקציה (בעלייה הבאה היא מסומנת כגמורה). פועלת עם ניווט ובלעדיו, מ-watch נפרד */
+const recIx={get(){try{return JSON.parse(localStorage.getItem('bikenav.recs'))||[];}catch(e){return[];}},
+  set(a){try{localStorage.setItem('bikenav.recs',JSON.stringify(a));return true;}catch(e){return false;}}};
+function recLoad(id){try{return JSON.parse(localStorage.getItem('bikenav.rec.'+id));}catch(e){return null;}}
+function recSave(R){
+  const d={id:R.id,t0:R.t0,segs:R.segs,marks:R.marks}, st=recStats(d); let ok=true;
+  try{localStorage.setItem('bikenav.rec.'+R.id,JSON.stringify(d));}catch(e){ok=false;}
+  const a=recIx.get().filter(x=>x.id!==R.id); a.unshift({id:R.id,t0:R.t0,dist:st.dist,dur:st.dur,n:st.n,m:R.marks.length,open:!!R.live});
+  if(!recIx.set(a))ok=false; R.dirty=0; R.saveT=Date.now();
+  if(!ok&&!R.fullWarned){R.fullWarned=1;toast(t('recFull'),7000);}
+}
+function recRemove(id){try{localStorage.removeItem('bikenav.rec.'+id);}catch(e){} recIx.set(recIx.get().filter(x=>x.id!==id));}
+const clk=s=>{s=Math.max(0,Math.round(s));const hh=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return(hh?hh+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0');};
+const fmtDate=ms=>new Date(ms).toLocaleString(LANG==='he'?'he-IL':'en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+let recLine=null;
+function recNewSeg(R){if(R.segs[R.segs.length-1].length)R.segs.push([]);R.last=null;recLine=null;}
+function startRec(){
+  if(S.rec){renderRecPop();togglePop('popRec');return;}
+  if(!navigator.geolocation){geoErr();return;}
+  const R=S.rec={id:'r'+Date.now(),t0:Date.now(),segs:[[]],marks:[],last:null,fix:null,acc:null,paused:false,live:true,dirty:0,saveT:0,free:false};
+  R.watch=navigator.geolocation.watchPosition(recPos,e=>{geoErr(e);if(e.code===1)stopRec();},{enableHighAccuracy:true,maximumAge:0,timeout:30000});
+  R.ui=setInterval(recUi,1000);
+  document.body.classList.add('rec'); keepAwake(true); recSave(R); toast(t('recOn'),6000);
+  if(S.view==='recs')render();
+}
+/* סינון: דיוק עד 30 מ׳, לא שומרים עמידה במקום (פחות מ-3 מ׳ ב-20 שנ׳), מדלגים על קפיצות (מעל 72 קמ"ש); הפסקה מעל דקה = מקטע חדש */
+function recPos(p){
+  const R=S.rec; if(!R)return; const c=p.coords, ll=[c.latitude,c.longitude], ts=p.timestamp||Date.now();
+  R.fix={lat:ll[0],lng:ll[1],ts:Date.now()}; R.acc=c.accuracy;
+  if(!S.nav){showMe(ll[0],ll[1],c.accuracy,c.heading);
+    if(!R.centered){R.centered=1;map.setView(ll,Math.max(map.getZoom(),16));} else if(!R.free&&!S.view)map.panInside(ll,{padding:[80,80]});}
+  if(R.paused||!(c.accuracy<=30))return;
+  const sec=Math.round((ts-R.t0)/1000), q=R.last;
+  if(q){const d=hav(q.ll,ll), dt=sec-q.sec; if(dt<1)return; if(d<3&&dt<20)return; if(d>20*dt)return; if(dt>60)recNewSeg(R);}
+  R.segs[R.segs.length-1].push([+ll[0].toFixed(6),+ll[1].toFixed(6),c.altitude!=null&&!isNaN(c.altitude)?Math.round(c.altitude*10)/10:null,sec]);
+  R.last={ll,sec};
+  if(!recLine)recLine=L.polyline([],{className:'recline',interactive:false}).addTo(recLayer);
+  recLine.addLatLng(ll);
+  if(++R.dirty>=10||Date.now()-R.saveT>15000)recSave(R);
+}
+function recMark(k){
+  const R=S.rec; if(!R)return; const f=R.fix;
+  if(!f||Date.now()-f.ts>30000){toast(t('recNoFix'));return;}
+  R.marks.push({la:+f.lat.toFixed(6),ln:+f.lng.toFixed(6),t:Math.round((Date.now()-R.t0)/1000),k});
+  L.circleMarker([f.lat,f.lng],{radius:7,weight:2,className:'recmk',interactive:false}).addTo(recLayer);
+  try{if(navigator.vibrate)navigator.vibrate(60);}catch(e){}
+  $('popRec').classList.remove('open'); toast(t('recMarked',t('mk.'+k))); recSave(R);
+}
+function recPause(){const R=S.rec;if(!R)return;R.paused=!R.paused;if(!R.paused)recNewSeg(R);document.body.classList.toggle('recp',R.paused);renderRecPop();recSave(R);}
+function stopRec(){
+  const R=S.rec; if(!R)return;
+  navigator.geolocation.clearWatch(R.watch); clearInterval(R.ui); S.rec=null; recLine=null;
+  document.body.classList.remove('rec','recp'); $('popRec').classList.remove('open'); recLayer.clearLayers(); if(!S.nav)keepAwake(false);
+  R.live=false; R.segs=R.segs.filter(s=>s.length);
+  if(recStats(R).n<5&&!R.marks.length){recRemove(R.id);toast(t('recShort'));if(S.view==='recs')render();return;}
+  recSave(R); toast(t('recSaved'));
+  if(!S.nav)openRec(R.id);
+}
+function renderRecPop(){
+  const R=S.rec; if(!R)return;
+  $('popRec').innerHTML=`<h4><span class="recdot"></span>${t(R.paused?'recPaused':'recH')}<b id="recStat"></b></h4><div class="note" id="recWeak" hidden>${t('recWeak')}</div>
+    <h4>${t('recMarkH')}</h4><div class="mkgrid">${MARKS.map(m=>`<button data-mk="${m.k}">${t('mk.'+m.k)}</button>`).join('')}</div>
+    <div class="btns"><button class="btn sec" data-ract="pause">${t(R.paused?'recResume':'recPause')}</button><button class="btn danger" data-ract="stop">${t('recStop')}</button></div>`;
+  recUi();
+}
+function recUi(){
+  const R=S.rec; if(!R)return; const el=$('recStat'), w=$('recWeak');
+  if(el)el.textContent=t('recStat',clk((Date.now()-R.t0)/1000),fmtDist(recStats(R).dist));
+  if(w)w.hidden=!(R.acc>30);
+}
+$('fabRec').onclick=()=>{renderRecPop();togglePop('popRec');};
+$('popRec').addEventListener('click',e=>{const m=e.target.closest('[data-mk]');if(m){recMark(m.dataset.mk);return;}
+  const b=e.target.closest('[data-ract]');if(!b)return;if(b.dataset.ract==='pause')recPause();else stopRec();});
+function openRec(id){S.recSel=id;S.recDel=false;S.recFit=null;S.view='rec';render();}
+function drawRecShow(R){
+  recShow.clearLayers(); const all=[];
+  R.segs.forEach(s=>{const ll=s.map(p=>[p[0],p[1]]);all.push(...ll);if(ll.length>1)L.polyline(ll,{className:'recline',interactive:false}).addTo(recShow);});
+  R.marks.forEach(m=>{all.push([m.la,m.ln]);L.circleMarker([m.la,m.ln],{radius:7,weight:2,className:'recmk'}).bindTooltip(esc(t('mk.'+m.k))).addTo(recShow);});
+  if(S.recFit!==R.id&&all.length){S.recFit=R.id;map.fitBounds(L.latLngBounds(all),{padding:[40,40],maxZoom:17});}
+}
+function recExport(){
+  const R=recLoad(S.recSel); if(!R)return;
+  const x=recTrim(R,S.recTrim?200:0); if(recStats(x).n<2){toast(t('recTooShort'));return;}
+  const d=new Date(R.t0), p2=v=>String(v).padStart(2,'0'), name=t('recGpxName',fmtDate(R.t0));
+  shareFile('bike-survey-'+d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate())+'-'+p2(d.getHours())+p2(d.getMinutes())+'.gpx',name,
+    recGPX(x,{name,desc:t('recGpxDesc'),label:k=>t('mk.'+k)}));
+}
+function recsHTML(){
+  const ix=recIx.get(); let h=S.rec?`<div class="note">${t('recLive')}</div>`:'';
+  h+=ix.length?ix.map(x=>`<button class="trail" data-rec="${esc(x.id)}"><b>${fmtDate(x.t0)}</b><br><span class="muted small">${fmtDist(x.dist)} · ${clk(x.dur)} · ${t('recMk',x.m)}</span></button>`).join('')
+    :`<p class="muted">${t('recsNone')}</p>`;
+  if(!S.rec)h+=`<div class="btns"><button class="btn" data-act="recstart">● ${t('recStart')}</button></div>`;
+  return h+`<p class="muted small">${t('recsNote')}</p>`;
+}
+function recHTML(R){
+  const st=recStats(R), cnt={}; R.marks.forEach(m=>{cnt[m.k]=(cnt[m.k]||0)+1;});
+  const c=R.segs.length?R.segs[0][Math.floor(R.segs[0].length/2)]:(R.marks[0]?[R.marks[0].la,R.marks[0].ln]:null);
+  let h=`<dl class="kv"><dt>${t('rDist')}</dt><dd>${fmtDist(st.dist)}</dd><dt>${t('rDur')}</dt><dd>${clk(st.dur)}</dd><dt>${t('rPts')}</dt><dd>${st.n}</dd>
+    <dt>${t('rMarks')}</dt><dd>${Object.keys(cnt).map(k=>esc(t('mk.'+k))+(cnt[k]>1?' ×'+cnt[k]:'')).join(', ')||t('recNoMarks')}</dd></dl>`;
+  h+=`<label class="chk"><input type="checkbox" id="recTrim" ${S.recTrim?'checked':''}><span>${t('recTrim')}</span></label>`;
+  h+=`<div class="btns"><button class="btn" data-act="recexp">${t('recExp')}</button></div>`;
+  h+=`<div class="btns"><a class="btn sec" href="https://www.openstreetmap.org/traces/new" target="_blank" rel="noopener">${t('recUp')}</a>${c?`<a class="btn sec" href="https://www.openstreetmap.org/edit?editor=id#map=17/${(+c[0]).toFixed(5)}/${(+c[1]).toFixed(5)}" target="_blank" rel="noopener">${t('recEdit')}</a>`:''}</div>`;
+  h+=`<details class="how"><summary>${t('recHowH')}</summary>${t('recHow')}</details>`;
+  h+=S.recDel?`<div class="note row"><span style="flex:1">${t('recDelQ')}</span><button class="btn danger" data-act="recdel2">${t('recDelYes')}</button><button class="btn sec" data-act="recdelno">${t('recDelNo')}</button></div>`
+    :`<div class="btns"><button class="btn sec" data-act="recs">${t('back')}</button><button class="btn sec" data-act="recdel">${t('recDel')}</button></div>`;
+  return h;
+}
+/* הקלטה שהאפליקציה נסגרה באמצעה – נשמרה עד הנקודה האחרונה; מסמנים אותה כגמורה */
+(function(){const a=recIx.get(); if(!a.some(x=>x.open))return; a.forEach(x=>{x.open=false;}); recIx.set(a); setTimeout(()=>toast(t('recRecovered'),6000),1500);})();
 
 /* ---------- תצוגת רוכב: המפה מוטה ומסתובבת כך שכיוון הרכיבה פונה למעלה ---------- */
 let povRot=0;
@@ -1333,7 +1546,7 @@ async function keepAwake(on){
   try{ if(P&&P.KeepAwake){await (on?P.KeepAwake.keepAwake():P.KeepAwake.allowSleep());return;}
     if(on&&'wakeLock' in navigator){wake=await navigator.wakeLock.request('screen');}else if(wake){await wake.release();wake=null;} }catch(e){}
 }
-document.addEventListener('visibilitychange',()=>{if(S.nav&&document.visibilityState==='visible')keepAwake(true);});
+document.addEventListener('visibilitychange',()=>{if(S.rec&&document.visibilityState==='hidden')recSave(S.rec); if((S.nav||S.rec)&&document.visibilityState==='visible')keepAwake(true);});
 
 function startNav(sim){
   const r=S.routes[S.active]; if(!r){toast(t('pickFirst'));return;}
@@ -1354,7 +1567,7 @@ function stopNav(silent){
   const n=S.nav; if(!n)return;
   if(n.watch!=null)navigator.geolocation.clearWatch(n.watch);
   if(S.sim){clearInterval(S.sim.timer);S.sim=null;}
-  S.nav=null; nameTok++; turnLayer.clearLayers(); applyTheme(); clearTimeout(overT); clearTimeout(stopT); document.body.classList.remove('nav','free'); applyPov(); $('navTop').classList.remove('warn'); keepAwake(false);
+  S.nav=null; nameTok++; turnLayer.clearLayers(); applyTheme(); clearTimeout(overT); clearTimeout(stopT); document.body.classList.remove('nav','free'); applyPov(); $('navTop').classList.remove('warn'); if(!S.rec)keepAwake(false);
   if(!silent)hush();
   drawMarkers(); drawRoutes(); if(S.view)render(); if(!silent)toast(t('navEnded'));
 }
@@ -1545,7 +1758,7 @@ $('modalLang').onclick=switchLang;
 document.addEventListener('click',e=>{if(e.target.id==='credit'){e.preventDefault();openModal('about');}});
 
 /* ---------- כפתורים ותפריטים ---------- */
-$('fabLocate').onclick=()=>{locateOnce(true).catch(()=>{});};
+$('fabLocate').onclick=()=>{if(S.rec)S.rec.free=false; locateOnce(true).catch(()=>{});};
 const togglePop=id=>{document.querySelectorAll('.pop').forEach(p=>p.classList.toggle('open',p.id===id&&!p.classList.contains('open')));};
 $('fabLayers').onclick=()=>togglePop('popLayers'); $('fabMenu').onclick=()=>togglePop('popMenu');
 $('popMenu').addEventListener('click',e=>{const b=e.target.closest('[data-menu]');if(!b)return;const m=b.dataset.menu;
@@ -1554,6 +1767,7 @@ $('popMenu').addEventListener('click',e=>{const b=e.target.closest('[data-menu]'
   if(m==='lang'){switchLang();return;}
   $('popMenu').classList.remove('open');
   if(m==='gpxin')$('gpxFile').click(); else if(m==='gpxout')exportGPX(); else if(m==='sim')startNav(true);
+  else if(m==='rec')startRec(); else if(m==='recs'){S.view='recs';render();}
   else if(m==='about')openModal('about');
 });
 if('speechSynthesis' in window)speechSynthesis.getVoices();
